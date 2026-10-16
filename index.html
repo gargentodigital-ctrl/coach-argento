@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Coach">
+<meta name="apple-mobile-web-app-title" content="Coaching PT Gio">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#ECEFF1" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#101316" media="(prefers-color-scheme: dark)">
@@ -430,7 +430,7 @@ function buildReport(key){
   const end=new Date(mon);end.setDate(end.getDate()+6);
   const tw=tendonStats(mon),a=analyze(key,tw);
   const L=[];
-  L.push(`COACH ARGENTO · report settimana ${key.split("-W")[1]} (${mon.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})})`);
+  L.push(`COACHING PT GIO · report settimana ${key.split("-W")[1]} (${mon.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})})`);
   L.push(`Sedute: ${a.wl.length}/4 (${a.wl.map(l=>l.sed).join(", ")||"nessuna"}) · RPE medio ${a.avgRpe?kgf(a.avgRpe):"–"} · tonnellaggio ${a.totVol?Math.round(a.totVol)+" kg":"–"}`);
   L.push(`Tendine dx: dolore medio ${tw.avg!=null?kgf(tw.avg):"–"} (media 4 sett. prima ${tw.baseAvg!=null?kgf(tw.baseAvg):"–"}) · rigidità ${tw.stiffs.length?tw.stiffs.map(x=>STIFF[x]).join("/"):"non segnata"}`);
   tw.asym.forEach(x=>L.push(`  ${x.n}: ${x.pct===0?"dx e sx pari":x.pct>0?"dx sotto sx del "+x.pct+"%":"dx sopra sx del "+(-x.pct)+"%"}`));
@@ -502,7 +502,7 @@ function renderHome(){
   app.innerHTML=`<div class="wrap">
    <div class="spread"><div class="eyebrow">Settimana ${key.split("-W")[1]} · ${new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}</div>
    <span class="sync muted">${logs.length?logs.length+" sedute salvate":""}</span></div>
-   <div class="spread"><h1>Coach Argento</h1><button class="btn btn-ghost" data-act="testsound" style="min-height:40px;font-size:1rem;padding:0 12px">🔊 Prova</button></div>
+   <div class="spread"><h1>Coaching PT Gio</h1><button class="btn btn-ghost" data-act="testsound" style="min-height:40px;font-size:1rem;padding:0 12px">🔊 Prova</button></div>
    <p class="coach">${esc(head)}</p>
    <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su 4">${[0,1,2,3].map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
    ${stiffCard}
