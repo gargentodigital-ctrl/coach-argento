@@ -84,6 +84,18 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .setdots b{min-width:44px;height:36px;padding:0 8px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:1rem;font-weight:700;background:var(--sunk);color:var(--muted)}
 .setdots b.done{background:var(--good);color:var(--surface)}
 .setdots b.cur{background:var(--accent);color:var(--accent-fg)}
+.setdots button{min-width:44px;height:36px;padding:0 8px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:1rem;font-weight:700;background:var(--good);color:var(--surface)}
+.setdots button.cur{background:var(--accent);color:var(--accent-fg);box-shadow:0 0 0 3px var(--surface),0 0 0 5px var(--accent)}
+.editbar{display:flex;flex-direction:column;gap:2px;background:var(--accent);color:var(--accent-fg);border-radius:var(--r);padding:12px 14px}
+.restbar{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center;text-align:left;background:var(--fg);color:var(--bg);border-radius:var(--r);padding:10px 14px}
+.restbar b{grid-row:span 2;font-family:var(--display);font-size:1.8rem;font-weight:800}
+.restbar span:last-child{font-size:.85rem;opacity:.8}
+.nextcard{width:100%;max-width:400px;background:var(--surface);color:var(--fg);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:8px;text-align:left}
+.nxname{font-family:var(--display);font-size:1.5rem;font-weight:800;text-transform:uppercase;line-height:1.1}
+.rest.withnext{justify-content:flex-start;overflow-y:auto}
+.rest.withnext .ring{width:min(56vw,220px)}
+.rest.withnext .ring .t b{font-size:4rem}
+.fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
 .fields{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -269,13 +281,17 @@ function wav(tones){
   let s="";const u=new Uint8Array(buf);for(let k=0;k<u.length;k+=8192)s+=String.fromCharCode.apply(null,u.subarray(k,k+8192));
   return "data:audio/wav;base64,"+btoa(s);
 }
+/* iOS 16.4+: sessione audio "transient" = il beep abbassa la musica per un attimo invece di fermarla */
+const MIX=(()=>{try{if(navigator.audioSession){navigator.audioSession.type="transient";return true}}catch{}return false})();
 function prime(a){if(!a||a._primed)return;try{a.muted=true;const p=a.play();if(p&&p.then)p.then(()=>{a.pause();a.currentTime=0;a.muted=false;a._primed=true}).catch(()=>{a.muted=false})}catch{}}
 function unlockAudio(){
   try{ac=ac||new(window.AudioContext||window.webkitAudioContext)();if(ac.state==="suspended")ac.resume()}catch{}
+  if(!MIX)return; /* senza Audio Session il tag <audio> fermerebbe Amazon Music: uso solo Web Audio */
   try{if(!sndEnd){sndEnd=new Audio(wav([[880,.22],[880,.22],[1320,.45]]));sndTick=new Audio(wav([[660,.15]]));sndEnd.preload=sndTick.preload="auto"}prime(sndEnd);prime(sndTick)}catch{}
 }
 function beep(n=3,f=880){
-  const a=n>1?sndEnd:sndTick;
+  try{if(MIX&&navigator.audioSession.type!=="transient")navigator.audioSession.type="transient"}catch{}
+  const a=MIX?(n>1?sndEnd:sndTick):null;
   try{navigator.vibrate&&navigator.vibrate(n>1?[200,100,200,100,400]:[120])}catch{}
   if(a){try{a.muted=false;a.currentTime=0;const p=a.play();if(p&&p.catch)p.catch(()=>webBeep(n,f));return}catch{}}
   webBeep(n,f);
@@ -306,9 +322,22 @@ function startWorkout(){
   S.w={sed:S.sel,v:S.v,start:new Date().toISOString(),i:0,s:0,data:{},line:pick(LINES.start)};
   prefill();S.view="work";saveDraft();render();window.scrollTo(0,0);
 }
+const curArr=()=>S.edit?S.edit.cur:S.w.cur;
+const viewIdx=()=>S.edit?S.edit.i:S.w.i;
+function startEdit(i,k){
+  const w=S.w,ex=PLAN[w.sed].ex[i],d=(w.data[ex.id]||[])[k];if(!d)return;
+  S.edit={i,s:k,cur:d.p.map(p=>({kg:p.kg||"",r:p.r}))};S.work=null;render();window.scrollTo(0,0);
+}
+function saveEdit(){
+  const w=S.w,e=S.edit,ex=PLAN[w.sed].ex[e.i],c=cfg(ex,w.v);
+  w.data[ex.id][e.s]={p:e.cur.map((x,j)=>({kg:c.p[j].kg?(parseFloat(String(x.kg).replace(",","."))||0):0,r:parseFloat(String(x.r).replace(",","."))||0}))};
+  S.edit=null;if(e.i===w.i&&e.s===w.s-1)prefill();saveDraft();toast(`Serie ${e.s+1} corretta`);render();window.scrollTo(0,0);
+}
 function logSet(){
   unlockAudio();
+  if(S.edit){saveEdit();return}
   const w=S.w,ex=PLAN[w.sed].ex[w.i],c=cfg(ex,w.v);
+  w.last={i:w.i,s:w.s};
   const entry={p:w.cur.map((x,j)=>({kg:c.p[j].kg?(parseFloat(String(x.kg).replace(",","."))||0):0,r:parseFloat(String(x.r).replace(",","."))||0}))};
   (w.data[ex.id]=w.data[ex.id]||[])[w.s]=entry;
   S.work=null;
@@ -510,7 +539,7 @@ function renderHome(){
 }
 
 function renderWork(){
-  const w=S.w,exs=PLAN[w.sed].ex,ex=exs[w.i],c=cfg(ex,w.v);
+  const w=S.w,exs=PLAN[w.sed].ex,vi=viewIdx(),ex=exs[vi],c=cfg(ex,w.v),E=S.edit,CUR=curArr();
   const mine=w.data[ex.id]||[];
   const prev=prevSets(w.sed,w.v,ex.id);
   const prevTxt=prev?prev.sets[ex.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?`${kgf(p.kg)}×${p.r}`:`${p.r}`).join("+")).join("  ·  "):"";
@@ -523,50 +552,64 @@ function renderWork(){
     <div class="spread"><span class="eyebrow">Seduta ${w.sed} · ${ex.var?varLabel(w.sed,w.v):PLAN[w.sed].t}</span><button class="muted" data-act="end" style="font-weight:600;padding:6px 0">Termina</button></div>
     <div class="prog">${exs.map((e,i)=>`<i class="${i<w.i?"done":i===w.i?"cur":""}"></i>`).join("")}</div>
    </div>
-   ${w.i===0&&w.s===0?`<p class="coach">${esc(w.line)}</p>`:""}
+   ${S.rest&&S.rest.hidden?`<button class="restbar" data-act="showrest"><span>Recupero in corso</span><b id="rbar" class="num">${mmss((S.rest.end-Date.now())/1000)}</b><span>Torna al timer</span></button>`:""}
+   ${E?`<div class="editbar"><b>Stai correggendo la serie ${E.s+1}</b><span>Cambia kg o reps e salva.</span></div>`:""}
+   ${w.i===0&&w.s===0&&!E?`<p class="coach">${esc(w.line)}</p>`:""}
    <div class="card">
-    <div class="eyebrow">Esercizio ${w.i+1} di ${big}${ex.leg?" · alterna dx e sx":c.p.length>1?" · superserie":""}${ex.side?" · per lato":""}</div>
+    <div class="eyebrow">Esercizio ${vi+1} di ${big}${ex.leg?" · alterna dx e sx":c.p.length>1?" · superserie":""}${ex.side?" · per lato":""}</div>
     <h2 class="exname">${ex.leg?ytLink(ex.p[0].n):ex.p.map(p=>ytLink(p.n)).join("<br>+ ")}</h2>
     <span class="muted" style="font-size:.85rem;margin-top:-6px">Tocca l'icona per vedere l'esecuzione</span>
     <div class="row"><span class="target">${tgtStr(ex,c)}</span>${c.rest?`<span class="pill">Rec ${c.rest}"</span>`:""}${ex.var?`<span class="pill y">Var. ${w.v+1}</span>`:""}</div>
     ${ex.note?`<div class="note">${esc(ex.note)}</div>`:""}
-    ${c.sets>1?`<div class="setdots">${Array.from({length:c.sets},(_,k)=>{const d=mine[k];const t=d?d.p.map((p,j)=>c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join("+"):"S"+(k+1);return `<b class="${d?"done":k===w.s?"cur":""}">${t}</b>`}).join("")}</div>`:""}
+    ${c.sets>1?`<div class="setdots">${Array.from({length:c.sets},(_,k)=>{const d=mine[k];const t=d?d.p.map((p,j)=>c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join("+"):"S"+(k+1);const cls=E?(k===E.s?"cur":d?"done":""):(d?"done":k===w.s?"cur":"");return d?`<button class="${cls}" data-act="editset" data-v="${k}" aria-label="Correggi serie ${k+1}">${t}</button>`:`<b class="${cls}">${t}</b>`}).join("")}</div>
+    ${!E&&mine.some(Boolean)?`<span class="muted" style="font-size:.85rem">Tocca una serie verde per correggerla</span>`:""}`:""}
    </div>
-   ${ex.free?`<div class="card"><div class="worktimer" id="wt">${wt?mmss((Date.now()-wt.start)/1000):"0:00"}</div>
+   ${E?"":ex.free?`<div class="card"><div class="worktimer" id="wt">${wt?mmss((Date.now()-wt.start)/1000):"0:00"}</div>
      <button class="btn btn-primary btn-big" data-act="${wt?"stopwork":"work"}">${wt?"Stop · fatto":"Avvia cronometro"}</button>
      <span class="muted" style="font-size:.85rem">Indicazione ${mmss(tp.v)}. Premi Stop quando hai finito: si passa all'esercizio dopo.</span></div>`:
    isTime?`<div class="card"><div class="worktimer" id="wt">${wt?mmss((wt.end-Date.now())/1000):mmss(tp.v)}</div>
      <button class="btn ${wt?"btn-ghost":"btn-primary"}" data-act="${wt?"stopwork":"work"}">${wt?"Ferma timer":"Avvia timer "+mmss(tp.v)}</button>
      ${wakeOk===false?`<span class="muted" style="font-size:.85rem">Tieni lo schermo acceso: se il telefono si blocca, il segnale arriva solo quando lo riapri.</span>`:""}</div>`:""}
-   <div class="card" ${ex.free?"hidden":""}>
-    ${c.p.map((p,j)=>{const cur=w.cur[j]||{};const showR=p.k!=="time"||c.p.length===1&&false;const fields=[];
-      if(p.kg)fields.push(`<div class="fld"><label for="kg${j}">Kg${ex.side?"":""}</label><div class="step"><button data-act="dec" data-f="kg" data-j="${j}" aria-label="meno peso">−</button><input id="kg${j}" inputmode="decimal" data-f="kg" data-j="${j}" value="${esc(cur.kg??"")}" placeholder="0"><button data-act="inc" data-f="kg" data-j="${j}" aria-label="più peso">+</button></div></div>`);
+   <div class="card" ${ex.free&&!E?"hidden":""}>
+    ${c.p.map((p,j)=>{const cur=CUR[j]||{};const showR=p.k!=="time"||c.p.length===1&&false;const fields=[];
+      if(p.kg)fields.push(`<div class="fld"><label for="kg${j}">Kg${ex.side?"":""}</label><div class="step"><button data-act="dec" data-f="kg" data-j="${j}" aria-label="meno peso">−</button><input id="kg${j}" inputmode="decimal" data-f="kg" data-j="${j}" value="${esc(String(cur.kg??"").replace(".",","))}" placeholder="0"><button data-act="inc" data-f="kg" data-j="${j}" aria-label="più peso">+</button></div></div>`);
       if(p.k!=="time")fields.push(`<div class="fld"><label for="r${j}">${p.k==="max"?"Reps fatte":"Reps"}</label><div class="step"><button data-act="dec" data-f="r" data-j="${j}" aria-label="meno reps">−</button><input id="r${j}" inputmode="numeric" data-f="r" data-j="${j}" value="${esc(cur.r??"")}" placeholder="0"><button data-act="inc" data-f="r" data-j="${j}" aria-label="più reps">+</button></div></div>`);
       if(!fields.length)return c.p.length>1?`<div class="part"><div class="eyebrow">${esc(p.lab||p.n)}</div><span class="muted">${mmss(p.v)} a tempo</span></div>`:"";
       return `<div class="part">${c.p.length>1?`<div class="eyebrow">${esc(p.lab||p.n)}</div>`:""}<div class="fields ${fields.length===1?"one":""}">${fields.join("")}</div></div>`}).join("")}
     ${prevTxt?`<div class="last">Ultima volta: <span class="num">${esc(prevTxt)}</span></div>`:""}
-    <button class="btn btn-primary btn-big" data-act="log">${c.sets>1?`Serie ${w.s+1} fatta`:"Fatto"}</button>
+    ${E?`<button class="btn btn-primary btn-big" data-act="log">Salva correzione</button><button class="btn btn-ghost" data-act="canceledit">Annulla</button>`:`<button class="btn btn-primary btn-big" data-act="log">${c.sets>1?`Serie ${w.s+1} fatta`:"Fatto"}</button>`}
    </div>
-   <div class="navex"><button data-act="prevex" ${w.i===0?"disabled style='opacity:.3'":""}>← Esercizio prima</button><button data-act="skipex">Salta esercizio →</button></div>
+   <div class="navex" ${E?"hidden":""}><button data-act="prevex" ${w.i===0?"disabled style='opacity:.3'":""}>← Esercizio prima</button><button data-act="skipex">Salta esercizio →</button></div>
   </div>
-  ${S.rest?restHTML():""}`;
+  ${S.rest&&!S.rest.hidden?restHTML():""}`;
 }
 function restHTML(){
   const r=S.rest,left=(r.end-Date.now())/1000,C=2*Math.PI*46;
   const w=S.w,ex=PLAN[w.sed].ex[w.i],c=cfg(ex,w.v);
-  const nextTxt=r.newEx?`Prossimo: ${exTitle(ex,c)}`:`Prossima: serie ${w.s+1} di ${c.sets}`;
   const kgTxt=w.cur.map((x,j)=>c.p[j].kg&&x.kg?kgf(parseFloat(String(x.kg).replace(",","."))||0)+" kg":"").filter(Boolean).join(" + ");
-  return `<div class="rest ${left<=0?"go":""}" id="rest" role="timer" aria-live="polite">
+  const prev=prevSets(w.sed,w.v,ex.id);
+  const prevTxt=prev?prev.sets[ex.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?`${kgf(p.kg)}×${p.r}`:`${p.r}`).join(ex.leg?" | ":"+")).join(" · "):"";
+  const nextCard=r.newEx?`<div class="nextcard">
+     <div class="eyebrow">Prossimo esercizio · ${w.i+1} di ${PLAN[w.sed].ex.length}</div>
+     <div class="nxname">${ex.leg?ytLink(ex.p[0].n):ex.p.map(p=>ytLink(p.n)).join(" + ")}</div>
+     <div class="row"><span class="target">${tgtStr(ex,c)}</span>${c.rest?`<span class="pill">Rec ${c.rest}"</span>`:""}${kgTxt?`<span class="pill">${esc(kgTxt)}</span>`:""}</div>
+     ${ex.note?`<div class="note">${esc(ex.note)}</div>`:""}
+     ${prevTxt?`<div class="last">Ultima volta: <span class="num">${esc(prevTxt)}</span></div>`:""}
+   </div>`:`<div class="nextcard"><div class="eyebrow">Prossima serie</div>
+     <div class="target">Serie ${w.s+1} di ${c.sets} · ${ex.leg?tgt(c.p[0])+" per gamba":c.p.map(tgt).join(" + ")}${kgTxt?" · "+esc(kgTxt):""}</div></div>`;
+  return `<div class="rest ${left<=0?"go":""} ${r.newEx?"withnext":""}" id="rest" role="timer" aria-live="polite">
    <div class="eyebrow" style="color:inherit">${left<=0?"Recupero finito":"Recupero"}</div>
    <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--sunk)" stroke-width="6"/><circle class="p" id="rp" cx="50" cy="50" r="46" fill="none" stroke="${left<=0?"var(--accent-fg)":"var(--accent)"}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.max(0,left)/r.total)}"/></svg>
     <div class="t"><b id="rt">${left<=0?"VAI":mmss(left)}</b></div></div>
    <p class="coach" id="rl">${esc(left<=0?pick(LINES.go):r.line)}</p>
-   <div class="next muted" style="color:inherit;opacity:.85">${esc(nextTxt)}${kgTxt?" · "+esc(kgTxt):""}</div>
+   ${nextCard}
    <div class="ctrl"><button class="btn btn-ghost" data-act="rminus">−15"</button><button class="btn btn-ghost" data-act="rplus">+15"</button><button class="btn btn-primary" data-act="rskip">${left<=0?"Vai":"Salta"}</button></div>
+   ${w.last&&left>0?`<button class="fixlast" data-act="fixlast">Correggi la serie appena fatta</button>`:""}
   </div>`;
 }
 setInterval(()=>{
   if(S.rest){const r=S.rest,left=(r.end-Date.now())/1000;
+    if(r.hidden){const rb=document.getElementById("rbar");if(left<=0){beep(3);toast("Recupero finito");S.rest=null;render();return}if(rb)rb.textContent=mmss(left);return}
     if(left<=0&&!r.fired){r.fired=true;beep(3);render();setTimeout(()=>{if(S.rest===r){S.rest=null;render();window.scrollTo(0,0)}},2500);return}
     const t=document.getElementById("rt"),p=document.getElementById("rp");
     if(t&&left>0){t.textContent=mmss(left);const C=2*Math.PI*46;p.setAttribute("stroke-dashoffset",C*(1-left/r.total));if(left<=3.2&&left>2.8&&!r.pre){r.pre=true;beep(1,660)}}
@@ -678,17 +721,21 @@ app.addEventListener("click",e=>{
    case"start":startWorkout();break;
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
    case"discard":S.w=null;saveDraft();render();break;
-   case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[w.i];const step=f==="kg"?stepFor(ex.p[j].n):1;
-     const cur=parseFloat(String(w.cur[j][f]).replace(",","."))||0;w.cur[j][f]=Math.max(0,Math.round((cur+(a==="inc"?step:-step))*10)/10);
-     const inp=document.getElementById(f+j);if(inp)inp.value=String(w.cur[j][f]).replace(".",",");saveDraft();break}
+   case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[0].n):1;const A=curArr();
+     const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=Math.max(0,Math.round((cur+(a==="inc"?step:-step))*10)/10);
+     const inp=document.getElementById(f+j);if(inp)inp.value=String(A[j][f]).replace(".",",");saveDraft();break}
+   case"editset":startEdit(viewIdx(),+v);break;
+   case"canceledit":S.edit=null;render();break;
+   case"fixlast":if(w.last){S.rest.hidden=true;startEdit(w.last.i,w.last.s)}break;
+   case"showrest":if(S.rest){S.rest.hidden=false;render()}break;
    case"log":logSet();break;
    case"work":{const ex=PLAN[w.sed].ex[w.i];if(ex.free){S.work={start:Date.now(),free:true}}else{const tp=cfg(ex,w.v).p.find(p=>p.k==="time");S.work={end:Date.now()+tp.v*1000}}keepAwake();render();break}
    case"stopwork":if(S.work&&S.work.free){w.cur[0].r=Math.round((Date.now()-S.work.start)/1000);S.work=null;logSet()}else{S.work=null;render()}break;
    case"rminus":S.rest.end-=15000;if(S.rest.end<Date.now()+1000)S.rest.end=Date.now()+1000;break;
    case"rplus":S.rest.end+=15000;S.rest.total+=15;break;
    case"rskip":S.rest=null;render();window.scrollTo(0,0);break;
-   case"prevex":if(w.i>0){w.i--;w.s=Math.min((w.data[PLAN[w.sed].ex[w.i].id]||[]).filter(Boolean).length,cfg(PLAN[w.sed].ex[w.i],w.v).sets-1);prefill();S.work=null;saveDraft();render();window.scrollTo(0,0)}break;
-   case"skipex":if(w.i>=PLAN[w.sed].ex.length-1){goFinish()}else{w.i++;w.s=0;prefill();S.work=null;saveDraft();render();window.scrollTo(0,0)}break;
+   case"prevex":S.edit=null;if(w.i>0){w.i--;w.s=Math.min((w.data[PLAN[w.sed].ex[w.i].id]||[]).filter(Boolean).length,cfg(PLAN[w.sed].ex[w.i],w.v).sets-1);prefill();S.work=null;saveDraft();render();window.scrollTo(0,0)}break;
+   case"skipex":S.edit=null;if(w.i>=PLAN[w.sed].ex.length-1){goFinish()}else{w.i++;w.s=0;prefill();S.work=null;saveDraft();render();window.scrollTo(0,0)}break;
    case"end":goFinish();break;
    case"back":S.view="work";render();break;
    case"testsound":keepAwake();setTimeout(()=>{beep(3);setTimeout(()=>toast(wakeOk===false?"Se non hai sentito: alza il volume. Schermo sempre acceso non disponibile qui.":"Se non hai sentito niente, alza il volume multimediale."),900)},700);break;
@@ -707,7 +754,7 @@ app.addEventListener("click",e=>{
   }
 });
 app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}
-  if(t.dataset.f&&S.w&&S.w.cur){S.w.cur[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
+  if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
 render();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
