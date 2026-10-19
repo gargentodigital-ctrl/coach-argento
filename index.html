@@ -143,6 +143,11 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .hrow td{padding:4px 0;border-top:1px solid var(--line);vertical-align:top}
 .hrow td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
 .danger{color:var(--bad);font-weight:600}
+.pcards{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
+.pcard{flex:0 0 min(78%,260px);scroll-snap-align:start;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:4px}
+.pcard[aria-pressed="true"]{border-color:var(--accent)}
+.pcard .pn{font-family:var(--display);font-size:1.25rem;font-weight:700;text-transform:uppercase;line-height:1.1}
+.psed{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:8px;font-size:.92rem}
 
 /* nav */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
@@ -173,49 +178,20 @@ textarea{width:100%;min-height:80px;border-radius:var(--r);border:1px solid var(
 <div id="toast" class="toast" hidden></div>
 
 <script src="anim.js"></script>
+<script src="programs.js"></script>
 <script>
-/* ======= PIANO (dal PDF) ======= */
-const P=(n,k,v,kg=true)=>({n,k,v,kg});
-const PLAN={
- A:{t:"Upper 1",ex:[
-  {id:"a1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
-  {id:"a2",p:[P("Panca piana con bilanciere","reps",10)],var:[[4,10,75],[5,4,105]]},
-  {id:"a3",p:[P("Rematore con bilanciere","reps",6)],var:[[5,6,90],[4,10,75]]},
-  {id:"a4",p:[P("Croci con manubri","reps",12),P("Deficit push up","max",0,false)],sets:4,rest:90,note:"Superserie: croci e subito push up al cedimento. Recupero solo dopo entrambi."},
-  {id:"a5",p:[P("Pulley braccio singolo","reps",10)],sets:3,rest:45,side:1,note:"Per braccio. Recupero dopo il secondo braccio."},
-  {id:"a6",p:[P("Low row machine","reps",12)],sets:3,rest:60},
-  {id:"a7",p:[P("French press","reps",10),P("EZ curl","reps",10)],sets:3,rest:60,note:"Superserie: recupero dopo entrambi."},
-  {id:"a8",p:[P("Alzata laterale al cavo basso","reps",12)],sets:3,rest:60,side:1,note:"Per lato. 2 o 3 serie: la terza solo se la tecnica regge."}]},
- B:{t:"Lower forza",ex:[
-  {id:"b1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
-  {id:"b2",p:[P("Tenuta isometrica su singolo avampiede","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},
-  {id:"b3",p:[P("Saltelli monopodalici veloci","reps",30,false)],sets:2,rest:60,leg:1},
-  {id:"b4",p:[P("Calf raise gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"Angolo debole come visto col fisio. Carica tanto."},
-  {id:"b5",p:[P("Bulgarian split squat su avampiede","reps",8)],sets:4,rest:45,leg:1,note:"Due manubri. 45\" tra una gamba e l'altra."},
-  {id:"b6",p:[P("Stacchi rumeni con manubri","reps",15)],sets:3,rest:60},
-  {id:"b7",p:[P("Wall sit","time",50,false),P("Squat jump","reps",8,false)],sets:4,rest:90,note:"Superserie. Salto bello alto."},
-  {id:"b8",p:[P("Wall run","time",10,false)],sets:4,rest:60,note:"Massima intensità, mani appoggiate al muro."}]},
- C:{t:"Total body",ex:[
-  {id:"c1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
-  {id:"c2",p:[P("Spinte in alto con bilanciere","reps",10)],var:[[4,10,75],[5,6,105]]},
-  {id:"c3",p:[P("Lat machine presa supina","reps",6)],var:[[5,6,90],[4,12,75]]},
-  {id:"c4",p:[P("Vertical traction","reps",10)],sets:3,rest:75,note:"2\" di tenuta in basso."},
-  {id:"c5",p:[P("Cyclist goblet squat","reps",10)],sets:4,rest:75},
-  {id:"c6",p:[P("Leg extension","reps",12)],sets:3,rest:60},
-  {id:"c7",p:[P("Calf raise su leg press","reps",10)],sets:4,rest:60,note:"2\" di tenuta nell'angolo debole."},
-  {id:"c8",p:[P("Tapis roulant","time",720,false)],sets:1,rest:0,note:"1' camminata + 1' corsa, alternati."}]},
- D:{t:"Total body",ex:[
-  {id:"d1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
-  {id:"d2",p:[P("Tenuta isometrica su avampiede al multipower","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},
-  {id:"d3",p:[P("Calf raise al multipower","reps",8)],sets:3,rest:60,note:"Bipodalico, peso alto."},
-  {id:"d4",p:[P("Stacchi rumeni con bilanciere","reps",6)],sets:4,rest:90,note:"Peso alto."},
-  {id:"d5",p:[P("Leg curl","reps",12)],sets:3,rest:60},
-  {id:"d6",p:[P("Croci ai cavi alti","reps",10)],sets:3,rest:60},
-  {id:"d7",p:[P("Spinte manubri su panca piana","reps",8)],sets:4,rest:90,note:"Peso alto."},
-  {id:"d8",p:[P("Pulley","reps",10)],sets:4,rest:75},
-  {id:"d9",p:[P("Push down al cavo alto","reps",12),P("Curl con due manubri","reps",12)],sets:3,rest:75,note:"Superserie: recupero dopo entrambi."}]}
-};
-const SEDS=["A","B","C","D"];
+/* ======= SCHEDE ======= */
+const DEF_PROG="argento5";
+function allProgs(){const extra=LS.get("pt-progs-extra",[]);const m=new Map();[...(window.PROGRAMS||[]),...extra].forEach(p=>m.set(p.id,p));return [...m.values()].sort((a,b)=>a.from<b.from?-1:a.from>b.from?1:0)}
+let PROGS=[];
+const progById=id=>PROGS.find(p=>p.id===id)||PROGS.find(p=>p.id===DEF_PROG)||PROGS[0];
+const progOf=l=>progById((l&&l.prog)||DEF_PROG);
+const planOf=l=>progOf(l).seds;
+const isTendon=l=>(progOf(l).tendon||[]).includes(l.sed);
+const calfOf=l=>progOf(l).calf||[];
+let ACTIVE,PLAN,SEDS,TENDON,CALF;
+function setActive(id){ACTIVE=progById(id);PLAN=ACTIVE.seds;SEDS=Object.keys(PLAN);TENDON={};(ACTIVE.tendon||[]).forEach(x=>TENDON[x]=1);CALF=ACTIVE.calf||[]}
+
 const VIDICON='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5" fill="currentColor"/><path d="M17 10.5 22 7.5v9l-5-3z" fill="currentColor"/></svg>';
 const ytLink=n=>window.ExAnim&&ExAnim.has(n)?`<span class="exn">${esc(n)}<button class="vid" data-act="vid" data-v="${esc(n)}" aria-label="Guarda l'esecuzione di ${esc(n)}">${VIDICON}</button></span>`:esc(n);
 function cfg(ex,v){ // risolve serie/target/recupero per la variante
@@ -227,9 +203,6 @@ function cfg(ex,v){ // risolve serie/target/recupero per la variante
 const exTitle=(ex,c)=>ex.leg?ex.p[0].n:c.p.map(p=>p.n).join(" + ");
 const tgt=p=>p.k==="time"?(p.v>=60?p.v/60+"'":p.v+'"'):p.k==="max"?"max":p.v;
 const tgtStr=(ex,c)=>c.sets+"×"+(ex.leg?tgt(c.p[0])+" per gamba":c.p.map(tgt).join("+"));
-/* Tendine: sedute con lavoro di polpaccio */
-const TENDON={B:1,C:1,D:1};
-const CALF=["b2","b3","b4","b5","c7","d2","d3"];
 const STIFF=["nessuna","lieve","forte"];
 function varLabel(sed,v){return PLAN[sed].ex.filter(e=>e.var).map(e=>{const c=cfg(e,v);return c.sets+"×"+c.p[0].v}).join(" · ")}
 
@@ -255,15 +228,20 @@ let logs=LS.get("pt-logs",[]);
 async function saveLog(l){logs=[...logs.filter(x=>x.id!==l.id),l];LS.set("pt-logs",logs)}
 async function deleteLog(id){logs=logs.filter(x=>x.id!==id);LS.set("pt-logs",logs)}
 const sorted=()=>[...logs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+PROGS=allProgs();
+if(logs.some(l=>!l.prog)){logs=logs.map(l=>l.prog?l:{...l,prog:DEF_PROG});LS.set("pt-logs",logs)}
+(function(){const d=LS.get("pt-draft",null);let id=d&&d.prog||LS.get("pt-prog",null);if(!id){const last=[...logs].sort((a,b)=>new Date(b.date)-new Date(a.date))[0];id=last?last.prog:PROGS[PROGS.length-1].id}setActive(id);LS.set("pt-prog",ACTIVE.id)})();
+const NS=()=>SEDS.length;
+const inActive=l=>progOf(l).id===ACTIVE.id;
 
 /* ======= STATO ======= */
 const S={view:"home",sel:null,v:null,w:LS.get("pt-draft",null),rest:null,work:null,wk:0,rpe:null,note:"",confirm:null,open:null};
-function lastOf(sed){return sorted().find(l=>l.sed===sed)}
+function lastOf(sed){return sorted().find(l=>l.sed===sed&&inActive(l))}
 function weekLogs(key){return logs.filter(l=>l.wk===key)}
-function suggest(){const done=new Set(weekLogs(isoWeek(new Date())).map(l=>l.sed));return SEDS.find(s=>!done.has(s))||null}
+function suggest(){const done=new Set(weekLogs(isoWeek(new Date())).filter(inActive).map(l=>l.sed));return SEDS.find(s=>!done.has(s))||null}
 function nextVar(sed){const l=lastOf(sed);return l?1-(l.v||0):0}
 function prevSets(sed,v,exId,beforeDate){
-  const arr=sorted().filter(l=>l.sed===sed&&l.sets&&l.sets[exId]&&(!beforeDate||new Date(l.date)<new Date(beforeDate)));
+  const arr=sorted().filter(l=>l.sed===sed&&inActive(l)&&l.sets&&l.sets[exId]&&(!beforeDate||new Date(l.date)<new Date(beforeDate)));
   return (arr.find(l=>(l.v||0)===v)||arr[0]||null);
 }
 function saveDraft(){if(S.w)LS.set("pt-draft",S.w);else LS.del("pt-draft")}
@@ -319,7 +297,7 @@ function prefill(){
 }
 function startWorkout(){
   unlockAudio();keepAwake();
-  S.w={sed:S.sel,v:S.v,start:new Date().toISOString(),i:0,s:0,data:{},line:pick(LINES.start)};
+  S.w={prog:ACTIVE.id,sed:S.sel,v:S.v,start:new Date().toISOString(),i:0,s:0,data:{},line:pick(LINES.start)};
   prefill();S.view="work";saveDraft();render();window.scrollTo(0,0);
 }
 const curArr=()=>S.edit?S.edit.cur:S.w.cur;
@@ -352,7 +330,7 @@ function goFinish(){S.rest=null;S.work=null;S.view="finish";S.rpe=null;S.pain=nu
 async function finish(){
   const w=S.w,start=new Date(w.start);
   if(TENDON[w.sed]&&S.pain==null){toast("Segna il dolore al tendine: è il dato che ci serve di più");return}
-  const l={id:"s"+start.getTime(),sed:w.sed,v:w.v,date:w.start,wk:isoWeek(start),dur:Math.round((Date.now()-start)/60000),rpe:S.rpe,note:S.note.trim(),sets:w.data};
+  const l={id:"s"+start.getTime(),prog:w.prog||ACTIVE.id,sed:w.sed,v:w.v,date:w.start,wk:isoWeek(start),dur:Math.round((Date.now()-start)/60000),rpe:S.rpe,note:S.note.trim(),sets:w.data};
   if(TENDON[w.sed]){l.pain=S.pain;l.stiff=null}
   S.w=null;saveDraft();S.view="home";S.sel=null;S.v=null;
   try{wake&&wake.release()}catch{}
@@ -364,18 +342,17 @@ const mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:null;
 function legMetric(sets,j,p){return sets.reduce((a,s)=>{const x=s&&s.p[j];if(!x)return a;return a+(p.kg&&x.kg?x.kg*(p.k==="time"?1:(x.r||0)):(x.r||0))},0)}
 function tendonStats(mon){
   const key=isoWeek(mon);
-  const wl=weekLogs(key).filter(l=>TENDON[l.sed]);
+  const wl=weekLogs(key).filter(isTendon);
   const pains=wl.map(l=>l.pain).filter(x=>typeof x==="number");
   const avg=mean(pains),max=pains.length?Math.max(...pains):null;
   const prevK=[1,2,3,4].map(i=>{const d=new Date(mon);d.setDate(d.getDate()-7*i);return isoWeek(d)});
   const baseAvg=mean(logs.filter(l=>prevK.includes(l.wk)&&typeof l.pain==="number").map(l=>l.pain));
   const stiffs=wl.map(l=>l.stiff).filter(x=>typeof x==="number"&&x>=0);
   const asym=[];
-  Object.values(PLAN).forEach(sd=>sd.ex.filter(e=>e.leg).forEach(ex=>{
-    let dx=0,sx=0;const c=cfg(ex,0);
-    wl.forEach(l=>{const s=l.sets&&l.sets[ex.id];if(!s)return;dx+=legMetric(s,0,c.p[0]);sx+=legMetric(s,1,c.p[1])});
-    if(dx>0&&sx>0)asym.push({n:ex.p[0].n,pct:Math.round((sx-dx)/Math.max(sx,dx)*100),unit:ex.p[0].kg?"carico":"reps"});
-  }));
+  const acc=new Map();
+  wl.forEach(l=>{const sd=planOf(l)[l.sed];if(!sd)return;sd.ex.filter(e=>e.leg).forEach(ex=>{const s=l.sets&&l.sets[ex.id];if(!s)return;const c=cfg(ex,0);
+    const o=acc.get(ex.p[0].n)||{dx:0,sx:0,kg:ex.p[0].kg};o.dx+=legMetric(s,0,c.p[0]);o.sx+=legMetric(s,1,c.p[1]);acc.set(ex.p[0].n,o)})});
+  acc.forEach((o,n)=>{if(o.dx>0&&o.sx>0)asym.push({n,pct:Math.round((o.sx-o.dx)/Math.max(o.sx,o.dx)*100),unit:o.kg?"carico":"reps"})});
   const msgs=[];let warn=false;
   if(wl.length){
     if(!pains.length)msgs.push(["warn","Dolore non registrato","Senza il numero non vediamo la tendenza. Segnalo a fine seduta."]);
@@ -402,16 +379,16 @@ function analyze(key,tw){
   const msgs=[];const done=new Set(wl.map(l=>l.sed));
   const isNow=key===isoWeek(new Date());
   const miss=SEDS.filter(s=>!done.has(s));
-  if(wl.length>=4)msgs.push(["good","Settimana completa: 4 su 4","È questo che fa la differenza, non il carico di una singola seduta."]);
-  else if(isNow){const left=7-((new Date().getDay()+6)%7);msgs.push([wl.length?"push":"warn",`Sei a ${wl.length} su 4`,`Mancano ${miss.join(", ")}. Restano ${left} giorni compreso oggi${miss.length>left?": tutte non ci stanno, scegli le più importanti (B e D sono le gambe)":""}.`])}
-  else if(wl.length)msgs.push([wl.length>=3?"warn":"bad",`${wl.length} sedute su 4`,`Saltate: ${miss.join(", ")}.${miss.some(s=>s==="B"||s==="D")?" Le sedute di gambe sono quelle che hai mollato: è lì che rischi di restare indietro.":""}`]);
+  if(wl.length>=NS())msgs.push(["good",`Settimana completa: ${NS()} su ${NS()}`,"È questo che fa la differenza, non il carico di una singola seduta."]);
+  else if(isNow){const left=7-((new Date().getDay()+6)%7);msgs.push([wl.length?"push":"warn",`Sei a ${wl.length} su ${NS()}`,`Mancano ${miss.join(", ")}. Restano ${left} giorni compreso oggi${miss.length>left?": tutte non ci stanno, scegli le più importanti (B e D sono le gambe)":""}.`])}
+  else if(wl.length)msgs.push([wl.length>=3?"warn":"bad",`${wl.length} sedute su ${NS()}`,`Saltate: ${miss.join(", ")}.${miss.some(s=>s==="B"||s==="D")?" Le sedute di gambe sono quelle che hai mollato: è lì che rischi di restare indietro.":""}`]);
   const vol=l=>{let v=0;for(const id in l.sets||{})(l.sets[id]||[]).forEach(s=>s&&s.p.forEach(p=>{v+=(p.kg||0)*(p.r||0)}));return v};
   const totVol=wl.reduce((a,l)=>a+vol(l),0);
   const rpes=wl.map(l=>l.rpe).filter(Boolean);const avgRpe=rpes.length?rpes.reduce((a,b)=>a+b,0)/rpes.length:null;
   if(avgRpe!==null){if(avgRpe>=9)msgs.push(["warn","Fatica alta (RPE medio "+kgf(avgRpe)+")","Se dura più di 2 settimane, dormi di più o togli una serie agli accessori."]);
     else if(avgRpe<=6)msgs.push(["push","Troppo comodo (RPE medio "+kgf(avgRpe)+")","Hai margine: alza i carichi dove chiudi tutte le reps."])}
   wl.forEach(l=>{
-    PLAN[l.sed].ex.forEach(ex=>{
+    (planOf(l)[l.sed]||{ex:[]}).ex.forEach(ex=>{
       const got=l.sets&&l.sets[ex.id];if(!got)return;const c=cfg(ex,l.v||0);
       const sets=got.filter(Boolean);
       if(sets.length<c.sets&&c.sets>1)msgs.push(["warn",`${ex.p[0].n}: ${sets.length}/${c.sets} serie`,"Hai tagliato serie. Se succede spesso, dimmelo e rivediamo il volume."]);
@@ -426,7 +403,7 @@ function analyze(key,tw){
         const pr=prevSets(l.sed,l.v||0,ex.id,l.date);
         const prMax=pr?Math.max(...pr.sets[ex.id].filter(Boolean).map(s=>s.p[j]?.kg||0)):null;
         const lbl=ex.var?` (${c.sets}×${p.v})`:"";
-        if(hit&&tw&&tw.warn&&CALF.includes(ex.id))msgs.push(["warn",`${p.n}: tutto chiuso a ${kgf(maxKg)} kg`,"Saliresti di carico, ma il tendine questa settimana è sopra la tua media. Resta qui."]);
+        if(hit&&tw&&tw.warn&&calfOf(l).includes(ex.id))msgs.push(["warn",`${p.n}: tutto chiuso a ${kgf(maxKg)} kg`,"Saliresti di carico, ma il tendine questa settimana è sopra la tua media. Resta qui."]);
         else if(hit)msgs.push(["push",`${p.n}${lbl}: tutto chiuso a ${kgf(maxKg)} kg`,`Prossima volta +${kgf(stepFor(p.n))} kg.`]);
         else if(missed>c.sets)msgs.push(["warn",`${p.n}${lbl}: ${missed} reps mancate a ${kgf(maxKg)} kg`,"Resta su questo carico finché non le chiudi tutte. Non salire."]);
         if(prMax!==null&&maxKg<prMax)msgs.push(["bad",`${p.n}: calato da ${kgf(prMax)} a ${kgf(maxKg)} kg`,"Se non era voluto, capisci perché: sonno, recupero, fretta."]);
@@ -448,13 +425,14 @@ function buildReport(key){
   const tw=tendonStats(mon),a=analyze(key,tw);
   const L=[];
   L.push(`COACHING PT GIO · report settimana ${key.split("-W")[1]} (${mon.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})})`);
-  L.push(`Sedute: ${a.wl.length}/4 (${a.wl.map(l=>l.sed).join(", ")||"nessuna"}) · RPE medio ${a.avgRpe?kgf(a.avgRpe):"–"} · tonnellaggio ${a.totVol?Math.round(a.totVol)+" kg":"–"}`);
+  L.push(`Scheda: ${ACTIVE.name}`);L.push(`Sedute: ${a.wl.length}/${NS()} (${a.wl.map(l=>l.sed).join(", ")||"nessuna"}) · RPE medio ${a.avgRpe?kgf(a.avgRpe):"–"} · tonnellaggio ${a.totVol?Math.round(a.totVol)+" kg":"–"}`);
   L.push(`Tendine dx: dolore medio ${tw.avg!=null?kgf(tw.avg):"–"} (media 4 sett. prima ${tw.baseAvg!=null?kgf(tw.baseAvg):"–"}) · rigidità ${tw.stiffs.length?tw.stiffs.map(x=>STIFF[x]).join("/"):"non segnata"}`);
   tw.asym.forEach(x=>L.push(`  ${x.n}: ${x.pct===0?"dx e sx pari":x.pct>0?"dx sotto sx del "+x.pct+"%":"dx sopra sx del "+(-x.pct)+"%"}`));
   a.wl.forEach(l=>{
     L.push("");
-    L.push(`SEDUTA ${l.sed}${PLAN[l.sed].ex.some(e=>e.var)?" var."+((l.v||0)+1):""} · ${fmtD(l.date)} · ${l.dur!=null?l.dur:"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}${typeof l.stiff==="number"&&l.stiff>=0?" · rigidità "+STIFF[l.stiff]:""}`);
-    PLAN[l.sed].ex.forEach(ex=>{const s=l.sets&&l.sets[ex.id];const c=cfg(ex,l.v||0);
+    const PL=planOf(l);if(!PL[l.sed])return;
+    L.push(`SEDUTA ${l.sed}${progOf(l).id!==ACTIVE.id?" ("+progOf(l).name+")":""}${PL[l.sed].ex.some(e=>e.var)?" var."+((l.v||0)+1):""} · ${fmtD(l.date)} · ${l.dur!=null?l.dur:"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}${typeof l.stiff==="number"&&l.stiff>=0?" · rigidità "+STIFF[l.stiff]:""}`);
+    PL[l.sed].ex.forEach(ex=>{const s=l.sets&&l.sets[ex.id];const c=cfg(ex,l.v||0);
       if(!s){L.push(`  ${exTitle(ex,c)}: saltato`);return}
       L.push(`  ${exTitle(ex,c)} (${tgtStr(ex,c)}): ${setsTxt(ex,c,s)}`)});
     if(l.note)L.push(`  Note: ${l.note}`);
@@ -472,10 +450,11 @@ async function shareText(t){
   if(navigator.share){try{await navigator.share({text:t});return}catch(e){if(e&&e.name==="AbortError")return}}
   copyText(t);
 }
-function backupStr(){return JSON.stringify({app:"coach-argento",v:1,date:new Date().toISOString(),logs})}
+function backupStr(){return JSON.stringify({app:"coach-argento",v:2,date:new Date().toISOString(),prog:ACTIVE.id,progsExtra:LS.get("pt-progs-extra",[]),logs})}
 function restore(txt){
   try{const d=JSON.parse(txt.trim());const arr=Array.isArray(d)?d:d.logs;if(!Array.isArray(arr))throw 0;
-    const map=new Map(logs.map(l=>[l.id,l]));arr.forEach(l=>{if(l&&l.id&&l.sed)map.set(l.id,l)});
+    if(d.progsExtra&&d.progsExtra.length){const ex=LS.get("pt-progs-extra",[]);const m=new Map(ex.map(p=>[p.id,p]));d.progsExtra.forEach(p=>m.set(p.id,p));LS.set("pt-progs-extra",[...m.values()]);PROGS=allProgs()}
+    const map=new Map(logs.map(l=>[l.id,l]));arr.forEach(l=>{if(l&&l.id&&l.sed)map.set(l.id,l.prog?l:{...l,prog:DEF_PROG})});
     logs=[...map.values()];LS.set("pt-logs",logs);toast(`Ripristinate ${arr.length} sedute`);return true}
   catch{toast("Backup non valido: incolla tutto il testo copiato");return false}
 }
@@ -495,18 +474,23 @@ function nav(cur){return `<nav class="nav"><div>
  <button data-act="go" data-v="hist" ${cur==="hist"?'aria-current="page"':""}>Storico</button></div></nav>`}
 
 function renderHome(){
-  const key=isoWeek(new Date());const wl=weekLogs(key);const done=new Set(wl.map(l=>l.sed));
+  const key=isoWeek(new Date());const wl=weekLogs(key).filter(inActive);const done=new Set(wl.map(l=>l.sed));
+  const newest=PROGS[PROGS.length-1];const seen=LS.get("pt-seen",{});
+  const newCard=newest&&newest.id!==ACTIVE.id&&!seen[newest.id]&&newest.from>ACTIVE.from?`<div class="card" style="border-color:var(--accent)"><div class="eyebrow">Nuova scheda disponibile</div>
+    <div class="target">${esc(newest.name)} · dal ${new Date(newest.from).toLocaleDateString("it-IT",{day:"numeric",month:"long"})}</div>
+    <span class="muted" style="font-size:.9rem">La scheda attuale resta salvata nello Storico con tutte le sedute fatte.</span>
+    <div class="row"><button class="btn btn-primary" data-act="activate" data-v="${newest.id}" style="flex:1">Attiva</button><button class="btn btn-ghost" data-act="later" data-v="${newest.id}">Più tardi</button></div></div>`:"";
   const sug=suggest();if(!S.sel)S.sel=sug||"A";if(S.v===null)S.v=nextVar(S.sel);
   const last=sorted()[0];const days=last?Math.floor((Date.now()-new Date(last.date))/864e5):null;
   let head;
   if(!logs.length)head="Prima seduta. Scegli, premi Inizia, al resto penso io.";
-  else if(wl.length>=4)head="Settimana chiusa. Riposa senza sensi di colpa.";
+  else if(wl.length>=NS())head="Settimana chiusa. Riposa senza sensi di colpa.";
   else if(days>=4)head=`${days} giorni dall'ultima seduta. Niente recuperi eroici: fai la prossima e basta.`;
   else if(days===0)head="Già fatto oggi. Se vuoi farne un'altra, va bene, ma il recupero conta.";
   else head=`Oggi tocca la ${sug}. Ci vogliono 60 minuti, non motivazione.`;
   const draft=S.w;
   const today0=new Date();today0.setHours(0,0,0,0);
-  const pend=sorted().find(l=>TENDON[l.sed]&&l.stiff===null&&new Date(l.date)<today0&&today0-new Date(l.date)<3*864e5);
+  const pend=sorted().find(l=>isTendon(l)&&l.stiff===null&&new Date(l.date)<today0&&today0-new Date(l.date)<3*864e5);
   const dow=(new Date().getDay()+6)%7;
   const remK=dow===0?(()=>{const d=new Date();d.setDate(d.getDate()-7);return isoWeek(d)})():dow===6?key:null;
   const shared=LS.get("pt-shared",{});
@@ -518,10 +502,12 @@ function renderHome(){
     <div class="seg" style="grid-template-columns:repeat(3,1fr)">${STIFF.map((s,i)=>`<button data-act="stiff" data-v="${i}" data-id="${pend.id}" style="text-transform:capitalize">${s}</button>`).join("")}</div></div>`:"";
   app.innerHTML=`<div class="wrap">
    <div class="spread"><div class="eyebrow">Settimana ${key.split("-W")[1]} · ${new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}</div>
-   <span class="sync muted">${logs.length?logs.length+" sedute salvate":""}</span></div>
+   <span class="sync muted">${logs.length?logs.length+(logs.length===1?" seduta salvata":" sedute salvate"):""}</span></div>
+   ${newCard}
    <div class="spread"><h1>Coaching PT Gio</h1><button class="btn btn-ghost" data-act="testsound" style="min-height:40px;font-size:1rem;padding:0 12px">🔊 Prova</button></div>
+   <div class="eyebrow" style="margin-top:-8px">${esc(ACTIVE.name)}</div>
    <p class="coach">${esc(head)}</p>
-   <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su 4">${[0,1,2,3].map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
+   <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su ${NS()}">${SEDS.map((_,i)=>i).map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
    ${stiffCard}
    ${remCard}
    ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">Seduta ${draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
@@ -664,7 +650,7 @@ function renderWeek(){
   const H=120,bw=W/8;
   const chart=`<svg viewBox="0 0 ${W} ${H+22}" role="img" aria-label="Sedute per settimana, ultime 8 settimane">
     ${[1,2,3,4].map(v=>`<line x1="0" x2="${W}" y1="${H-v*(H-8)/4}" y2="${H-v*(H-8)/4}" stroke="var(--line)" stroke-width="1" ${v===4?'stroke-dasharray="4 3"':""}/>`).join("")}
-    ${weeks.map((x,i)=>{const h=Math.min(x.n,5)*(H-8)/4;return `<rect x="${i*bw+bw*.18}" y="${H-h}" width="${bw*.64}" height="${Math.max(h,0)}" rx="3" fill="${x.n>=4?"var(--good)":x.cur?"var(--accent)":"var(--muted)"}" opacity="${x.cur?1:.75}"/>
+    ${weeks.map((x,i)=>{const h=Math.min(x.n,5)*(H-8)/4;return `<rect x="${i*bw+bw*.18}" y="${H-h}" width="${bw*.64}" height="${Math.max(h,0)}" rx="3" fill="${x.n>=NS()?"var(--good)":x.cur?"var(--accent)":"var(--muted)"}" opacity="${x.cur?1:.75}"/>
      <text x="${i*bw+bw/2}" y="${H+15}" text-anchor="middle" font-size="10" fill="var(--muted)" font-family="Barlow,sans-serif">${x.k.split("-W")[1]}</text>
      ${x.n?`<text x="${i*bw+bw/2}" y="${H-h-4}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--fg)" font-family="Barlow,sans-serif">${x.n}</text>`:""}`}).join("")}
   </svg>`;
@@ -673,7 +659,7 @@ function renderWeek(){
    <div class="wnav"><button data-act="wk" data-v="-1" aria-label="Settimana prima">‹</button>
      <div style="text-align:center"><h2>Settimana ${key.split("-W")[1]}</h2><div class="muted" style="font-size:.9rem">${m.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})}</div></div>
      <button data-act="wk" data-v="1" aria-label="Settimana dopo" ${S.wk>=0?"disabled style='opacity:.3'":""}>›</button></div>
-   <div class="stats"><div class="stat"><b>${a.wl.length}/4</b><span>Sedute</span></div><div class="stat"><b>${a.totVol?Math.round(a.totVol/100)/10+"t":"–"}</b><span>Tonnellaggio</span></div><div class="stat"><b>${a.avgRpe?kgf(a.avgRpe):"–"}</b><span>RPE medio</span></div></div>
+   <div class="stats"><div class="stat"><b>${a.wl.length}/${NS()}</b><span>Sedute</span></div><div class="stat"><b>${a.totVol?Math.round(a.totVol/100)/10+"t":"–"}</b><span>Tonnellaggio</span></div><div class="stat"><b>${a.avgRpe?kgf(a.avgRpe):"–"}</b><span>RPE medio</span></div></div>
    <div class="row">${SEDS.map(s=>`<span class="pill" style="${a.done.has(s)?"background:var(--good);color:var(--surface)":""}">${s} ${a.done.has(s)?"✓":"–"}</span>`).join("")}</div>
    <div class="eyebrow">Cosa migliorare</div>
    <div class="msgs">${a.msgs.length?a.msgs.map(x=>`<div class="msg ${x[0]}"><div><strong>${esc(x[1])}</strong><span class="muted">${esc(x[2])}</span></div></div>`).join(""):`<div class="msg warn"><div><strong>Nessuna seduta registrata</strong><span class="muted">Qui non c'è niente da analizzare. Il miglioramento parte dalla prossima seduta.</span></div></div>`}</div>
@@ -683,7 +669,7 @@ function renderWeek(){
    <div class="card"><div class="eyebrow">Dolore medio · ultime 8 settimane</div><div class="chart">${painChart}</div>
     <span class="muted" style="font-size:.85rem">Non c'è una soglia fissa: il riferimento è la tua media delle 4 settimane prima. Se sale di 1,5 punti o compare rigidità forte, i polpacci non progrediscono.</span></div>
    <div class="card"><div class="eyebrow">Costanza · ultime 8 settimane</div><div class="chart">${chart}</div>
-    <span class="muted" style="font-size:.85rem">Linea tratteggiata = 4 sedute. Il numero che conta più di tutti.</span></div>
+    <span class="muted" style="font-size:.85rem">Linea tratteggiata = ${NS()} sedute. Il numero che conta più di tutti.</span></div>
    <div class="card"><div class="eyebrow">Check con Claude</div>
     <p style="margin:0">Manda il report di questa settimana a Claude: legge carichi, tendine e note e ti dice cosa cambiare.</p>
     <button class="btn btn-primary" data-act="share" data-v="${key}">Invia a Claude</button>
@@ -692,22 +678,54 @@ function renderWeek(){
   </div>${nav("week")}`;
 }
 
+function progEnd(p){const nx=PROGS[PROGS.indexOf(p)+1];return nx?nx.from:null}
+const fmtDay=d=>new Date(d).toLocaleDateString("it-IT",{day:"numeric",month:"short",year:"numeric"});
 function renderHist(){
-  const L=sorted();
-  app.innerHTML=`<div class="wrap"><div class="eyebrow">Storico</div><h1>${L.length} sedute</h1>
+  const hp=progById(S.histProg||ACTIVE.id);
+  const L=sorted().filter(l=>progOf(l).id===hp.id);
+  const progCards=[...PROGS].reverse().map(p=>{const n=logs.filter(l=>progOf(l).id===p.id).length;const end=progEnd(p);
+    return `<button class="pcard" data-act="hprog" data-v="${p.id}" aria-pressed="${p.id===hp.id}">
+      <span class="pn">${esc(p.name)}</span>
+      <span class="muted">${fmtDay(p.from)} – ${p.id===ACTIVE.id?"in corso":end?fmtDay(end):"–"}</span>
+      <span class="row" style="gap:6px">${p.id===ACTIVE.id?'<span class="pill y">Attiva</span>':""}<span class="pill">${n} ${n===1?"seduta":"sedute"}</span></span></button>`}).join("");
+  const planHTML=S.showPlan?Object.entries(hp.seds).map(([k,sd])=>`<div class="psed"><b>Seduta ${k} · ${esc(sd.t)}</b>${sd.ex.map(e=>{const c=cfg(e,0);return `<div class="spread"><span>${esc(exTitle(e,c))}</span><span class="muted num" style="white-space:nowrap">${tgtStr(e,c)}</span></div>`}).join("")}</div>`).join(""):"";
+  app.innerHTML=`<div class="wrap"><div class="eyebrow">Storico</div><h1>Le tue schede</h1>
+   <div class="pcards">${progCards}</div>
+   <div class="card">
+    <div class="spread"><h2>${esc(hp.name)}</h2>${hp.id===ACTIVE.id?'<span class="pill y">Attiva</span>':""}</div>
+    <span class="muted">${Object.keys(hp.seds).length} sedute a settimana · ${L.length} eseguite</span>
+    <button class="btn btn-ghost" data-act="showplan">${S.showPlan?"Nascondi esercizi":"Vedi esercizi della scheda"}</button>
+    ${planHTML}
+    ${hp.id!==ACTIVE.id?`<button class="btn btn-primary" data-act="activate" data-v="${hp.id}">Attiva questa scheda</button>`:""}
+   </div>
+   <div class="eyebrow">Sedute eseguite</div>
    <div class="hist">${L.length?L.map(l=>{const open=S.open===l.id;return `<div class="hrow">
      <button class="spread" data-act="open" data-v="${l.id}" style="text-align:left;width:100%"><span><b style="font-family:var(--display);font-size:1.3rem">Seduta ${l.sed}</b> <span class="muted">· ${fmtD(l.date)}</span></span><span class="muted num">${l.dur||"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}</span></button>
      ${typeof l.stiff==="number"&&l.stiff>=0?`<span class="muted" style="font-size:.85rem">Rigidità il mattino dopo: ${STIFF[l.stiff]}</span>`:""}
-     ${open?`<table>${PLAN[l.sed].ex.filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${c.p.map(p=>esc(p.n)).join(" + ")}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join("+")).join(", ")}</td></tr>`}).join("")}</table>
+     ${open?`<table>${(planOf(l)[l.sed]||{ex:[]}).ex.filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
       ${l.note?`<div class="note">${esc(l.note)}</div>`:""}
       <button class="danger" data-act="del" data-v="${l.id}" style="align-self:flex-start;padding:6px 0">${S.confirm===l.id?"Tocca di nuovo per eliminare":"Elimina seduta"}</button>`:""}
-    </div>`}).join(""):`<p class="muted">Ancora niente. La prima seduta comparirà qui.</p>`}</div>
+    </div>`}).join(""):`<p class="muted">Nessuna seduta registrata con questa scheda.</p>`}</div>
+   <div class="card"><div class="eyebrow">Caricare una nuova scheda</div>
+    <p style="margin:0">Manda a Claude in chat il PDF della scheda nuova: la trasforma e la aggiunge all'app, che ti propone di attivarla. In alternativa incolla qui il codice scheda che ti dà Claude.</p>
+    <div class="fld"><label for="impprog">Codice scheda</label><textarea id="impprog" data-f="impprog" placeholder="Incolla qui il codice">${esc(S.impprog||"")}</textarea></div>
+    <button class="btn btn-ghost" data-act="impprog">Aggiungi scheda</button></div>
    <div class="card"><div class="eyebrow">Backup</div>
     <p style="margin:0">I dati stanno solo su questo telefono. Fai un backup ogni tanto e incollalo nelle Note: se cambi telefono o cancelli l'app, lo ripristini da qui.</p>
     <button class="btn btn-ghost" data-act="backup">Copia backup</button>
     <div class="fld"><label for="restore">Ripristina da backup</label><textarea id="restore" data-f="restore" placeholder="Incolla qui il backup">${esc(S.restore||"")}</textarea></div>
     <button class="btn btn-ghost" data-act="restore">Ripristina</button></div>
   </div>${nav("hist")}`;
+}
+function importProg(txt){
+  try{const p=JSON.parse(txt.trim());if(!p.id||!p.name||!p.from||!p.seds)throw 0;
+    const ex=LS.get("pt-progs-extra",[]).filter(x=>x.id!==p.id);ex.push(p);LS.set("pt-progs-extra",ex);PROGS=allProgs();toast(`Scheda "${p.name}" aggiunta`);return true}
+  catch{toast("Codice non valido: incolla tutto il testo che ti ha dato Claude");return false}
+}
+function activateProg(id){
+  if(S.w){toast("Finisci o butta la seduta in corso prima di cambiare scheda");return}
+  setActive(id);LS.set("pt-prog",id);const seen=LS.get("pt-seen",{});seen[id]=1;LS.set("pt-seen",seen);
+  S.sel=null;S.v=null;S.histProg=id;toast(`Scheda attiva: ${ACTIVE.name}`);render();
 }
 
 /* ======= EVENTI ======= */
@@ -745,6 +763,11 @@ app.addEventListener("click",e=>{
    case"copyrep":copyText(buildReport(v));break;
    case"backup":copyText(backupStr());break;
    case"restore":if(restore(S.restore||"")){S.restore="";render()}break;
+   case"hprog":S.histProg=v;S.open=null;S.showPlan=false;render();break;
+   case"showplan":S.showPlan=!S.showPlan;render();break;
+   case"activate":activateProg(v);break;
+   case"later":{const seen=LS.get("pt-seen",{});seen[v]=1;LS.set("pt-seen",seen);render();break}
+   case"impprog":if(importProg(S.impprog||"")){S.impprog="";render()}break;
    case"pain":S.pain=+v;render();break;
    case"stiff":{const l=logs.find(x=>x.id===b.dataset.id);if(l){saveLog({...l,stiff:+v});toast(+v===2?"Segnato. Oggi niente salti, e se resta così parlane col fisio.":"Segnato.");render()}break}
    case"save":finish();break;
@@ -753,7 +776,7 @@ app.addEventListener("click",e=>{
    case"del":if(S.confirm===v){deleteLog(v);S.confirm=null;S.open=null;toast("Seduta eliminata")}else S.confirm=v;render();break;
   }
 });
-app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}
+app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}
   if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
 render();
