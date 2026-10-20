@@ -414,6 +414,28 @@ function attachWatch(){
   if(attached.length)LS.set("pt-logs",logs);
   LS.set("pt-watch",keep);return attached;
 }
+function parseWatchText(t){
+  try{t=String(t||"").trim();const i=t.indexOf("watch=");if(i<0)return null;const q=new URLSearchParams(t.slice(i).split(/[\s]/)[0]);
+    let st=q.get("start");let d=st?new Date(st.replace(" ","T")):new Date();if(isNaN(d))d=new Date();
+    const p={start:d.toISOString(),min:numP(q.get("min")),kcal:numP(q.get("kcal")),hr:numP(q.get("hr")),hrmax:numP(q.get("hrmax"))};
+    return (p.kcal==null&&p.hr==null&&p.min==null)?null:p}catch{return null}
+}
+async function pasteWatch(logId){
+  let txt=null;try{txt=await navigator.clipboard.readText()}catch{}
+  const p=parseWatchText(txt);
+  if(!p){S.watchPaste=logId;render();toast("Non trovo i dati negli appunti: incollali nel campo");return}
+  applyWatch(logId,p);
+}
+function watchPasteUI(l){
+  const btn=`<button class="btn btn-ghost" data-act="wpaste" data-v="${l.id}">${l.watch?"Aggiorna dati Apple Watch":"Aggiungi dati Apple Watch"}</button>`;
+  if(S.watchPaste!==l.id)return btn;
+  return btn+`<div class="fld"><label for="wtxt">Incolla qui il testo copiato dal comando</label><textarea id="wtxt" data-f="wtxt" placeholder="watch=1&kcal=...">${esc(S.watchTxt||"")}</textarea></div><button class="btn btn-primary" data-act="wapply" data-v="${l.id}">Aggiungi</button>`;
+}
+function applyWatch(logId,p){
+  const l=logs.find(x=>x.id===logId);if(!l)return;
+  const nl={...l,watch:{min:p.min,kcal:p.kcal,hr:p.hr,hrmax:p.hrmax,start:p.start}};saveLog(nl);S.watchPaste=null;S.watchTxt="";
+  toast(`Dati Apple Watch aggiunti: ${watchTxt(nl.watch)}`);render();
+}
 const watchTxt=w=>[w.min!=null?Math.round(w.min)+"'":null,w.kcal!=null?Math.round(w.kcal)+" kcal":null,w.hr!=null?"FC media "+Math.round(w.hr)+(w.hrmax!=null?" (max "+Math.round(w.hrmax)+")":""):null].filter(Boolean).join(" · ");
 function onWatchArrive(){
   const p=readWatchURL();const att=attachWatch();
@@ -594,6 +616,7 @@ function renderHome(){
    <p class="coach">${esc(head)}</p>
    <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su ${NS()}">${SEDS.map((_,i)=>i).map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
    ${stiffCard}
+   ${(()=>{const t0=new Date();t0.setHours(0,0,0,0);const l=sorted().find(x=>new Date(x.date)>=t0&&!x.watch);return l?`<div class="card"><div class="eyebrow">Apple Watch</div><div class="target">Aggiungi i dati dell'orologio alla seduta ${l.sed} di oggi</div>${watchPasteUI(l)}</div>`:""})()}
    ${LS.get("pt-watch",[]).length?`<div class="watchline">Dati Apple Watch in attesa: si agganciano alla seduta quando la salvi.</div>`:""}
    ${remCard}
    ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">Seduta ${draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
@@ -811,6 +834,7 @@ function renderHist(){
      ${l.watch?`<span class="watchline">Apple Watch · ${esc(watchTxt(l.watch))}</span>`:""}
      ${open?`<table>${(planOf(l)[l.sed]||{ex:[]}).ex.filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
       ${l.note?`<div class="note">${esc(l.note)}</div>`:""}
+      ${watchPasteUI(l)}
       <button class="danger" data-act="del" data-v="${l.id}" style="align-self:flex-start;padding:6px 0">${S.confirm===l.id?"Tocca di nuovo per eliminare":"Elimina seduta"}</button>`:""}
     </div>`}).join(""):`<p class="muted">Nessuna seduta registrata con questa scheda.</p>`}</div>
    <div class="card"><div class="eyebrow">Caricare una nuova scheda</div>
@@ -869,6 +893,8 @@ app.addEventListener("click",e=>{
    case"testsound":keepAwake();setTimeout(()=>{beep(3);setTimeout(()=>toast(wakeOk===false?"Se non hai sentito: alza il volume. Schermo sempre acceso non disponibile qui.":"Se non hai sentito niente, alza il volume multimediale."),900)},700);break;
    case"vid":if(window.ExAnim)ExAnim.open(v);break;
    case"rpe":S.rpe=+v;render();break;
+   case"wpaste":pasteWatch(v);break;
+   case"wapply":{const p=parseWatchText(S.watchTxt);if(p)applyWatch(v,p);else toast("Testo non valido: deve contenere watch=1&kcal=…");break}
    case"suggok":(w.suggOk=w.suggOk||{})[v]=true;saveDraft();render();break;
    case"share":{shareText(buildReport(v));const sh=LS.get("pt-shared",{});sh[v]=1;LS.set("pt-shared",sh);setTimeout(render,1500);break}
    case"copyrep":copyText(buildReport(v));break;
@@ -887,7 +913,7 @@ app.addEventListener("click",e=>{
    case"del":if(S.confirm===v){deleteLog(v);S.confirm=null;S.open=null;toast("Seduta eliminata")}else S.confirm=v;render();break;
   }
 });
-app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}
+app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}if(t.dataset.f==="wtxt"){S.watchTxt=t.value;return}
   if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
 onWatchArrive();
