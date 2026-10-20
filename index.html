@@ -102,6 +102,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .sheetbg{position:fixed;inset:0;z-index:30;background:rgba(10,14,18,.5);display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--surface);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:20px max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:10px}
 .danger-btn{color:var(--bad)}
+.watchline{font-size:.88rem;font-weight:600;color:var(--fg);background:var(--sunk);border-radius:8px;padding:6px 10px;align-self:flex-start}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -389,7 +390,34 @@ async function finish(){
   if(TENDON[w.sed]){l.pain=S.pain;l.stiff=null}
   S.w=null;saveDraft();S.view="home";S.sel=null;S.v=null;
   try{wake&&wake.release()}catch{}
-  await saveLog(l);toast(pick(LINES.end));render();
+  await saveLog(l);const att=attachWatch();toast(att.length?`Seduta salvata con i dati Apple Watch: ${watchTxt(att[0][0])}`:pick(LINES.end));render();
+}
+
+/* ======= APPLE WATCH (dati passati dal comando di iOS via URL) ======= */
+const numP=v=>{if(v==null||v==="")return null;const n=parseFloat(String(v).replace(/\s/g,"").replace(",","."));return isFinite(n)?n:null};
+function readWatchURL(){
+  try{const q=new URLSearchParams(location.search);if(!q.has("watch"))return null;
+    let st=q.get("start");let d=st?new Date(st.replace(" ","T")):new Date();if(isNaN(d))d=new Date();
+    const p={start:d.toISOString(),min:numP(q.get("min")),kcal:numP(q.get("kcal")),hr:numP(q.get("hr")),hrmax:numP(q.get("hrmax")),got:new Date().toISOString()};
+    history.replaceState(null,"",location.pathname);
+    if(p.min==null&&p.kcal==null&&p.hr==null)return null;
+    const pend=LS.get("pt-watch",[]);pend.push(p);LS.set("pt-watch",pend);return p}catch{return null}
+}
+function attachWatch(){
+  let pend=LS.get("pt-watch",[]);if(!pend.length)return [];
+  const attached=[];const keep=[];
+  pend.forEach(p=>{const t=new Date(p.start).getTime();
+    let best=null,bd=1e15;logs.forEach(l=>{const dd=Math.abs(new Date(l.date).getTime()-t);if(dd<4*36e5&&dd<bd){bd=dd;best=l}});
+    if(best){best.watch={min:p.min,kcal:p.kcal,hr:p.hr,hrmax:p.hrmax,start:p.start};attached.push([p,best])}
+    else if(Date.now()-new Date(p.got).getTime()<2*864e5)keep.push(p);
+  });
+  if(attached.length)LS.set("pt-logs",logs);
+  LS.set("pt-watch",keep);return attached;
+}
+const watchTxt=w=>[w.min!=null?Math.round(w.min)+"'":null,w.kcal!=null?Math.round(w.kcal)+" kcal":null,w.hr!=null?"FC media "+Math.round(w.hr)+(w.hrmax!=null?" (max "+Math.round(w.hrmax)+")":""):null].filter(Boolean).join(" · ");
+function onWatchArrive(){
+  const p=readWatchURL();const att=attachWatch();
+  if(p){const a=att.find(x=>x[0]===p);setTimeout(()=>toast(a?`Dati Apple Watch agganciati alla seduta ${a[1].sed}: ${watchTxt(p)}`:`Dati Apple Watch ricevuti: si agganciano quando salvi la seduta`),500)}
 }
 
 /* ======= ANALISI SETTIMANALE ======= */
@@ -481,6 +509,7 @@ function buildReport(key){
   const L=[];
   L.push(`COACHING PT GIO · report settimana ${key.split("-W")[1]} (${mon.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})})`);
   L.push(`Scheda: ${ACTIVE.name}`);L.push(`Sedute: ${a.wl.length}/${NS()} (${a.wl.map(l=>l.sed).join(", ")||"nessuna"}) · RPE medio ${a.avgRpe?kgf(a.avgRpe):"–"} · tonnellaggio ${a.totVol?Math.round(a.totVol)+" kg":"–"}`);
+  {const ww=a.wl.filter(l=>l.watch);if(ww.length){const k=ww.reduce((s,l)=>s+(l.watch.kcal||0),0);const hrs=ww.map(l=>l.watch.hr).filter(x=>x!=null);L.push(`Apple Watch (${ww.length} sedute): ${Math.round(k)} kcal totali${hrs.length?" · FC media "+Math.round(mean(hrs)):""}`)}}
   L.push(`Tendine dx: dolore medio ${tw.avg!=null?kgf(tw.avg):"–"} (media 4 sett. prima ${tw.baseAvg!=null?kgf(tw.baseAvg):"–"}) · rigidità ${tw.stiffs.length?tw.stiffs.map(x=>STIFF[x]).join("/"):"non segnata"}`);
   tw.asym.forEach(x=>L.push(`  ${x.n}: ${x.pct===0?"dx e sx pari":x.pct>0?"dx sotto sx del "+x.pct+"%":"dx sopra sx del "+(-x.pct)+"%"}`));
   a.wl.forEach(l=>{
@@ -490,6 +519,7 @@ function buildReport(key){
     PL[l.sed].ex.forEach(ex=>{const s=l.sets&&l.sets[ex.id];const c=cfg(ex,l.v||0);
       if(!s){L.push(`  ${exTitle(ex,c)}: saltato`);return}
       L.push(`  ${exTitle(ex,c)} (${tgtStr(ex,c)}): ${setsTxt(ex,c,s)}`)});
+    if(l.watch)L.push(`  Apple Watch: ${watchTxt(l.watch)}`);
     if(l.note)L.push(`  Note: ${l.note}`);
   });
   if(a.msgs.length||tw.msgs.length){L.push("");L.push("Segnalazioni dell'app:");[...tw.msgs,...a.msgs].forEach(m=>L.push(`  - ${m[1]}`))}
@@ -564,6 +594,7 @@ function renderHome(){
    <p class="coach">${esc(head)}</p>
    <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su ${NS()}">${SEDS.map((_,i)=>i).map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
    ${stiffCard}
+   ${LS.get("pt-watch",[]).length?`<div class="watchline">Dati Apple Watch in attesa: si agganciano alla seduta quando la salvi.</div>`:""}
    ${remCard}
    ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">Seduta ${draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
      <div class="row"><button class="btn btn-primary" data-act="resume" style="flex:1">Riprendi</button><button class="btn btn-ghost" data-act="discard">Butta</button></div></div>`:""}
@@ -734,6 +765,7 @@ function renderWeek(){
      <div style="text-align:center"><h2>Settimana ${key.split("-W")[1]}</h2><div class="muted" style="font-size:.9rem">${m.toLocaleDateString("it-IT",{day:"numeric",month:"short"})} – ${end.toLocaleDateString("it-IT",{day:"numeric",month:"short"})}</div></div>
      <button data-act="wk" data-v="1" aria-label="Settimana dopo" ${S.wk>=0?"disabled style='opacity:.3'":""}>›</button></div>
    <div class="stats"><div class="stat"><b>${a.wl.length}/${NS()}</b><span>Sedute</span></div><div class="stat"><b>${a.totVol?Math.round(a.totVol/100)/10+"t":"–"}</b><span>Tonnellaggio</span></div><div class="stat"><b>${a.avgRpe?kgf(a.avgRpe):"–"}</b><span>RPE medio</span></div></div>
+   ${(()=>{const ww=a.wl.filter(l=>l.watch);if(!ww.length)return "";const k=ww.reduce((s,l)=>s+(l.watch.kcal||0),0);const hrs=ww.map(l=>l.watch.hr).filter(x=>x!=null);return `<div class="watchline">Apple Watch · ${ww.length} ${ww.length===1?"seduta":"sedute"} · ${Math.round(k)} kcal · ${hrs.length?"FC media "+Math.round(mean(hrs)):""}</div>`})()}
    <div class="row">${SEDS.map(s=>`<span class="pill" style="${a.done.has(s)?"background:var(--good);color:var(--surface)":""}">${s} ${a.done.has(s)?"✓":"–"}</span>`).join("")}</div>
    <div class="eyebrow">Cosa migliorare</div>
    <div class="msgs">${a.msgs.length?a.msgs.map(x=>`<div class="msg ${x[0]}"><div><strong>${esc(x[1])}</strong><span class="muted">${esc(x[2])}</span></div></div>`).join(""):`<div class="msg warn"><div><strong>Nessuna seduta registrata</strong><span class="muted">Qui non c'è niente da analizzare. Il miglioramento parte dalla prossima seduta.</span></div></div>`}</div>
@@ -776,6 +808,7 @@ function renderHist(){
    <div class="hist">${L.length?L.map(l=>{const open=S.open===l.id;return `<div class="hrow">
      <button class="spread" data-act="open" data-v="${l.id}" style="text-align:left;width:100%"><span><b style="font-family:var(--display);font-size:1.3rem">Seduta ${l.sed}</b> <span class="muted">· ${fmtD(l.date)}</span></span><span class="muted num">${l.dur||"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}</span></button>
      ${typeof l.stiff==="number"&&l.stiff>=0?`<span class="muted" style="font-size:.85rem">Rigidità il mattino dopo: ${STIFF[l.stiff]}</span>`:""}
+     ${l.watch?`<span class="watchline">Apple Watch · ${esc(watchTxt(l.watch))}</span>`:""}
      ${open?`<table>${(planOf(l)[l.sed]||{ex:[]}).ex.filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
       ${l.note?`<div class="note">${esc(l.note)}</div>`:""}
       <button class="danger" data-act="del" data-v="${l.id}" style="align-self:flex-start;padding:6px 0">${S.confirm===l.id?"Tocca di nuovo per eliminare":"Elimina seduta"}</button>`:""}
@@ -857,6 +890,7 @@ app.addEventListener("click",e=>{
 app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}
   if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
+onWatchArrive();
 render();
 if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}
 </script>
