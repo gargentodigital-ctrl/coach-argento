@@ -61,7 +61,8 @@ button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px soli
 .sed .T{font-weight:600}
 .sed .S{font-size:.85rem;color:var(--muted)}
 .sed[aria-pressed="true"]{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset}
-.sed .tick{position:absolute;top:10px;right:10px;font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.08em;padding:2px 8px;border-radius:99px;background:var(--good);color:var(--surface)}
+.sed .est{position:absolute;top:10px;right:10px;font-family:var(--display);font-weight:700;font-size:.95rem;padding:2px 8px;border-radius:99px;background:var(--sunk);color:var(--fg);font-variant-numeric:tabular-nums}
+.sed .tick{position:absolute;bottom:10px;right:10px;font-family:var(--display);font-weight:700;font-size:.8rem;letter-spacing:.08em;padding:2px 8px;border-radius:99px;background:var(--good);color:var(--surface)}
 .seg{display:grid;grid-template-columns:1fr 1fr;background:var(--sunk);border-radius:var(--r);padding:4px;gap:4px}
 .seg button{min-height:44px;border-radius:7px;font-weight:600}
 .seg button[aria-pressed="true"]{background:var(--surface);box-shadow:0 1px 2px rgba(0,0,0,.12)}
@@ -589,6 +590,17 @@ function nav(cur){return `<nav class="nav"><div>
  <button data-act="go" data-v="week" ${cur==="week"?'aria-current="page"':""}>Check</button>
  <button data-act="go" data-v="hist" ${cur==="hist"?'aria-current="page"':""}>Storico</button></div></nav>`}
 
+/* stima durata seduta: lavoro + recuperi + cambio attrezzo; se ci sono sedute vere uso la loro media */
+function estMin(sed){
+  const real=sorted().filter(l=>l.sed===sed&&inActive(l)&&l.dur>=15).slice(0,3).map(l=>l.dur);
+  if(real.length)return {m:Math.round(mean(real)/5)*5,real:true};
+  const v=nextVar(sed);let sec=0;
+  PLAN[sed].ex.forEach(ex=>{const c=cfg(ex,v);
+    const per=ex.p.reduce((a,p)=>a+(p.k==="time"?p.v:p.k==="max"?30:Math.max(20,(c.p.find(q=>q.n.startsWith(p.n))||p).v*3.5)),0)*(ex.leg||ex.side?2:1);
+    sec+=c.sets*per+Math.max(0,c.sets-1)*(c.rest||0)+(ex.free?0:60);
+  });
+  return {m:Math.max(5,Math.round(sec/60/5)*5),real:false};
+}
 function renderHome(){
   const key=isoWeek(new Date());const wl=weekLogs(key).filter(inActive);const done=new Set(wl.map(l=>l.sed));
   const newest=PROGS[PROGS.length-1];const seen=LS.get("pt-seen",{});
@@ -630,7 +642,7 @@ function renderHome(){
    ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">Seduta ${draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
      <div class="row"><button class="btn btn-primary" data-act="resume" style="flex:1">Riprendi</button><button class="btn btn-ghost" data-act="discard">Butta</button></div></div>`:""}
    <div class="sedute">${SEDS.map(s=>`<button class="sed" data-act="sel" data-v="${s}" aria-pressed="${S.sel===s}">
-     ${done.has(s)?'<span class="tick">FATTA</span>':""}<span class="L">${s}</span><span class="T">${PLAN[s].t}</span><span class="S">${PLAN[s].ex.length} esercizi${s===sug?" · consigliata":""}</span></button>`).join("")}</div>
+     ${(()=>{const e=estMin(s);return `<span class="est" title="${e.real?"Media delle tue ultime sedute":"Stima da serie e recuperi"}">${e.real?"":"~"}${e.m}'</span>`})()}${done.has(s)?'<span class="tick">FATTA</span>':""}<span class="L">${s}</span><span class="T">${PLAN[s].t}</span><span class="S">${PLAN[s].ex.length} esercizi${s===sug?" · consigliata":""}</span></button>`).join("")}</div>
    ${PLAN[S.sel].ex.some(e=>e.var)?`<div class="fld"><label>Variante (alterna ogni settimana)</label><div class="seg">
      ${[0,1].map(v=>`<button data-act="var" data-v="${v}" aria-pressed="${S.v===v}">${varLabel(S.sel,v)}${v===nextVar(S.sel)&&lastOf(S.sel)?" ✓":""}</button>`).join("")}</div>
      <span class="muted" style="font-size:.85rem">${lastOf(S.sel)?"La ✓ è quella che tocca, alternando dall'ultima volta.":"Prima volta: parti dalla prima."}</span></div>`:""}
