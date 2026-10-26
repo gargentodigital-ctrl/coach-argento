@@ -153,8 +153,9 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .hrow td{padding:4px 0;border-top:1px solid var(--line);vertical-align:top}
 .hrow td:last-child{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
 .danger{color:var(--bad);font-weight:600}
-.pcards{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;scroll-snap-type:x mandatory}
-.pcard{flex:0 0 min(78%,260px);scroll-snap-align:start;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:4px}
+.pcards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.filebtn{cursor:pointer}
+.pcard{min-width:0;text-align:left;background:var(--surface);border:2px solid var(--line);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:4px}
 .pcard[aria-pressed="true"]{border-color:var(--accent)}
 .pcard .pn{font-family:var(--display);font-size:1.25rem;font-weight:700;text-transform:uppercase;line-height:1.1}
 .psed{display:flex;flex-direction:column;gap:4px;border-top:1px solid var(--line);padding-top:8px;font-size:.92rem}
@@ -581,9 +582,9 @@ async function shareText(t){
 function backupStr(){return JSON.stringify({app:"coach-argento",v:2,date:new Date().toISOString(),prog:ACTIVE.id,progsExtra:LS.get("pt-progs-extra",[]),logs})}
 function restore(txt){
   try{const d=JSON.parse(txt.trim());const arr=Array.isArray(d)?d:d.logs;if(!Array.isArray(arr))throw 0;
-    if(d.progsExtra&&d.progsExtra.length){const ex=LS.get("pt-progs-extra",[]);const m=new Map(ex.map(p=>[p.id,p]));d.progsExtra.forEach(p=>m.set(p.id,p));LS.set("pt-progs-extra",[...m.values()]);PROGS=allProgs()}
+    if(d.progsExtra&&d.progsExtra.length){S.histProg=d.progsExtra[d.progsExtra.length-1].id;S.showPlan=false;const ex=LS.get("pt-progs-extra",[]);const m=new Map(ex.map(p=>[p.id,p]));d.progsExtra.forEach(p=>m.set(p.id,p));LS.set("pt-progs-extra",[...m.values()]);PROGS=allProgs()}
     const map=new Map(logs.map(l=>[l.id,l]));arr.forEach(l=>{if(l&&l.id&&l.sed)map.set(l.id,l.prog?l:{...l,prog:DEF_PROG})});
-    logs=[...map.values()];LS.set("pt-logs",logs);toast(`Ripristinate ${arr.length} sedute`);return true}
+    logs=[...map.values()];LS.set("pt-logs",logs);toast(`Caricate ${arr.length} sedute${S.histProg?" · scheda "+progById(S.histProg).name:""}`);return true}
   catch{toast("Backup non valido: incolla tutto il testo copiato");return false}
 }
 
@@ -881,7 +882,9 @@ function renderHist(){
     <p style="margin:0">I dati stanno solo su questo telefono. Fai un backup ogni tanto e incollalo nelle Note: se cambi telefono o cancelli l'app, lo ripristini da qui.</p>
     <button class="btn btn-ghost" data-act="backup">Copia backup</button>
     <div class="fld"><label for="restore">Ripristina da backup</label><textarea id="restore" data-f="restore" placeholder="Incolla qui il backup">${esc(S.restore||"")}</textarea></div>
-    <button class="btn btn-ghost" data-act="restore">Ripristina</button></div>
+    <button class="btn btn-ghost" data-act="restore">Ripristina</button>
+    <label class="btn btn-primary filebtn" for="restfile">Carica da file (backup o storico Hevy)</label>
+    <input type="file" id="restfile" accept=".txt,.json,text/plain,application/json" hidden></div>
   </div>${nav("hist")}`;
 }
 function importProg(txt){
@@ -951,6 +954,8 @@ app.addEventListener("click",e=>{
    case"del":if(S.confirm===v){deleteLog(v);S.confirm=null;S.open=null;toast("Seduta eliminata")}else S.confirm=v;render();break;
   }
 });
+app.addEventListener("change",e=>{const t=e.target;if(t.id!=="restfile"||!t.files||!t.files[0])return;
+  const fr=new FileReader();fr.onload=()=>{if(restore(String(fr.result))){S.restore="";render();window.scrollTo(0,0)}};fr.onerror=()=>toast("Non riesco a leggere il file");fr.readAsText(t.files[0]);t.value=""});
 app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}if(t.dataset.f==="wtxt"){S.watchTxt=t.value;return}if(t.dataset.f==="whr"){S.whr=t.value;return}
   if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
