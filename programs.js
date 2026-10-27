@@ -37,7 +37,7 @@ window.PROGRAMS=[
  D:{t:"Total body",ex:[
   {id:"d1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
   {id:"d2",p:[P("Tenuta isometrica su avampiede al multipower","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},
-  {id:"d3b",since:"2026-10-27",p:[P("Calf raise su leg press gamba singola","reps",8)],sets:3,rest:60,leg:1,note:"Per singolo piede, con 10\" di isometria. Su indicazione del PT dal 27 ottobre."},
+  {id:"d3b",since:"2026-10-27",p:[P("Calf raise su leg press gamba singola","reps",8)],sets:3,rest:60,leg:1,note:"Per singolo piede: 8 ripetizioni, poi 10\" di isometria alla fine della serie. Su indicazione del PT dal 27 ottobre."},
   {id:"d4",p:[P("Stacchi rumeni con bilanciere","reps",6)],sets:4,rest:90,note:"Peso alto."},
   {id:"d5",p:[P("Leg curl","reps",12)],sets:3,rest:60},
   {id:"d6",p:[P("Croci ai cavi alti","reps",10)],sets:3,rest:60},

@@ -146,7 +146,7 @@ const MAP={
  "Tapis roulant":["tread","Alterna 1 minuto di camminata e 1 di corsa."],
  "Tenuta isometrica su avampiede al multipower":["isoSmith","Sali in punta sotto il bilanciere e tieni fermo."],
  "Calf raise al multipower":["calfSmith","Tallone giù, poi su in punta piena con peso alto."],
- "Calf raise su leg press gamba singola":["lpcalf","Un piede alla volta sulla pedana: spingi con l'avampiede e tieni 10 secondi."],
+ "Calf raise su leg press gamba singola":["lpcalf","Un piede alla volta: 8 spinte con l'avampiede, poi tieni 10 secondi alla fine."],
  "Leg curl":["legcurl","Bacino schiacciato sulla panca, porta i talloni verso i glutei."],
  "Croci ai cavi alti":["cablefly","Dall'alto verso il basso, le mani si incontrano davanti al bacino."],
  "Push down al cavo alto":["pushdown","Gomiti fermi ai fianchi, spingi fino a braccia tese."]
