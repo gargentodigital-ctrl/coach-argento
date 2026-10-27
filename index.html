@@ -198,6 +198,7 @@ let PROGS=[];
 const progById=id=>PROGS.find(p=>p.id===id)||PROGS.find(p=>p.id===DEF_PROG)||PROGS[0];
 const progOf=l=>progById((l&&l.prog)||DEF_PROG);
 const planOf=l=>progOf(l).seds;
+const exAll=sd=>sd?[...sd.ex,...(sd.old||[])]:[];
 const isTendon=l=>(progOf(l).tendon||[]).includes(l.sed);
 const calfOf=l=>progOf(l).calf||[];
 let ACTIVE,PLAN,SEDS,TENDON,CALF;
@@ -474,7 +475,7 @@ function tendonStats(mon){
   const stiffs=wl.map(l=>l.stiff).filter(x=>typeof x==="number"&&x>=0);
   const asym=[];
   const acc=new Map();
-  wl.forEach(l=>{const sd=planOf(l)[l.sed];if(!sd)return;sd.ex.filter(e=>e.leg).forEach(ex=>{const s=l.sets&&l.sets[ex.id];if(!s)return;const c=cfg(ex,0);
+  wl.forEach(l=>{const sd=planOf(l)[l.sed];if(!sd)return;exAll(sd).filter(e=>e.leg).forEach(ex=>{const s=l.sets&&l.sets[ex.id];if(!s)return;const c=cfg(ex,0);
     const o=acc.get(ex.p[0].n)||{dx:0,sx:0,kg:ex.p[0].kg};o.dx+=legMetric(s,0,c.p[0]);o.sx+=legMetric(s,1,c.p[1]);acc.set(ex.p[0].n,o)})});
   acc.forEach((o,n)=>{if(o.dx>0&&o.sx>0)asym.push({n,pct:Math.round((o.sx-o.dx)/Math.max(o.sx,o.dx)*100),unit:o.kg?"carico":"reps"})});
   const msgs=[];let warn=false;
@@ -514,7 +515,7 @@ function analyze(key,tw){
   if(avgRpe!==null){if(avgRpe>=9)msgs.push(["warn","Fatica alta (RPE medio "+kgf(avgRpe)+")","Se dura più di 2 settimane, dormi di più o togli una serie agli accessori."]);
     else if(avgRpe<=6)msgs.push(["push","Troppo comodo (RPE medio "+kgf(avgRpe)+")","Hai margine: alza i carichi dove chiudi tutte le reps."])}
   wl.forEach(l=>{
-    (progOf(l).archived?{ex:[]}:(planOf(l)[l.sed]||{ex:[]})).ex.forEach(ex=>{
+    (progOf(l).archived?[]:exAll(planOf(l)[l.sed])).forEach(ex=>{
       const got=l.sets&&l.sets[ex.id];if(!got)return;const c=cfg(ex,l.v||0);
       const sets=got.filter(Boolean);
       if(sets.length<c.sets&&c.sets>1)msgs.push(["warn",`${ex.p[0].n}: ${sets.length}/${c.sets} serie`,"Hai tagliato serie. Se succede spesso, dimmelo e rivediamo il volume."]);
@@ -560,7 +561,7 @@ function buildReport(key){
     L.push("");
     const PL=planOf(l);if(!PL[l.sed])return;
     L.push(`SEDUTA ${l.sed}${progOf(l).id!==ACTIVE.id?" ("+progOf(l).name+")":""}${PL[l.sed].ex.some(e=>e.var)?" var."+((l.v||0)+1):""} · ${fmtD(l.date)} · ${l.dur!=null?l.dur:"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}${typeof l.stiff==="number"&&l.stiff>=0?" · rigidità "+STIFF[l.stiff]:""}`);
-    PL[l.sed].ex.forEach(ex=>{const s=l.sets&&l.sets[ex.id];const c=cfg(ex,l.v||0);
+    exAll(PL[l.sed]).forEach(ex=>{const s=l.sets&&l.sets[ex.id];const c=cfg(ex,l.v||0);if(!s&&((PL[l.sed].old||[]).includes(ex)||(ex.since&&l.date.slice(0,10)<ex.since)))return;
       if(!s){L.push(`  ${exTitle(ex,c)}: saltato`);return}
       L.push(`  ${exTitle(ex,c)} (${tgtStr(ex,c)}): ${setsTxt(ex,c,s)}`)});
     if(l.watch&&l.watch.hr!=null)L.push(`  ${watchTxt(l.watch)}`);
@@ -869,7 +870,7 @@ function renderHist(){
      <button class="spread" data-act="open" data-v="${l.id}" style="text-align:left;width:100%"><span><b style="font-family:var(--display);font-size:1.3rem">${hp.archived?esc((hp.seds[l.sed]||{}).t||l.sed):"Seduta "+l.sed}</b> <span class="muted">· ${fmtD(l.date)}</span></span><span class="muted num">${l.dur||"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}</span></button>
      ${typeof l.stiff==="number"&&l.stiff>=0?`<span class="muted" style="font-size:.85rem">Rigidità il mattino dopo: ${STIFF[l.stiff]}</span>`:""}
      ${l.watch&&l.watch.hr!=null?`<span class="watchline">♥ ${esc(watchTxt(l.watch))}</span>`:""}
-     ${open?`<table>${(planOf(l)[l.sed]||{ex:[]}).ex.filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].k==="time"?(p.kg?kgf(p.kg)+"kg ":"")+mmss(p.r):c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
+     ${open?`<table>${exAll(planOf(l)[l.sed]).filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].k==="time"?(p.kg?kgf(p.kg)+"kg ":"")+mmss(p.r):c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
       ${l.note?`<div class="note">${esc(l.note)}</div>`:""}
       ${watchPasteUI(l)}
       <button class="danger" data-act="del" data-v="${l.id}" style="align-self:flex-start;padding:6px 0">${S.confirm===l.id?"Tocca di nuovo per eliminare":"Elimina seduta"}</button>`:""}

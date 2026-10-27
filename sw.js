@@ -1,4 +1,4 @@
-const V="coach-v18";
+const V="coach-v19";
 const CORE=["./","index.html","anim.js","programs.js","manifest.webmanifest","icon-192.png","icon-512.png","apple-touch-icon.png"];
 // "reload" scavalca la cache HTTP di GitHub Pages (10 minuti), così l'aggiornamento arriva subito
 self.addEventListener("install",e=>{e.waitUntil(caches.open(V).then(c=>Promise.all(CORE.map(u=>fetch(new Request(u,{cache:"reload"})).then(r=>{if(r.ok)return c.put(u,r)})))).then(()=>self.skipWaiting()))});

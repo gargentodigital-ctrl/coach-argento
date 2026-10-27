@@ -5,7 +5,7 @@
 const P=(n,k,v,kg=true)=>({n,k,v,kg});
 window.PROGRAMS=[
 {id:"argento5",name:"Scheda G. Argento 5",from:"2026-10-16",
- tendon:["B","C","D"],calf:["b2","b3","b4","b5","c7","d2","d3"],
+ tendon:["B","C","D"],calf:["b2","b3","b4","b5","c7","d2","d3","d3b"],
  seds:{
  A:{t:"Upper 1",ex:[
   {id:"a1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
@@ -37,13 +37,15 @@ window.PROGRAMS=[
  D:{t:"Total body",ex:[
   {id:"d1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
   {id:"d2",p:[P("Tenuta isometrica su avampiede al multipower","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},
-  {id:"d3",p:[P("Calf raise al multipower","reps",8)],sets:3,rest:60,note:"Bipodalico, peso alto."},
+  {id:"d3b",since:"2026-10-27",p:[P("Calf raise su leg press gamba singola","reps",8)],sets:3,rest:60,leg:1,note:"Per singolo piede, con 10\" di isometria. Su indicazione del PT dal 27 ottobre."},
   {id:"d4",p:[P("Stacchi rumeni con bilanciere","reps",6)],sets:4,rest:90,note:"Peso alto."},
   {id:"d5",p:[P("Leg curl","reps",12)],sets:3,rest:60},
   {id:"d6",p:[P("Croci ai cavi alti","reps",10)],sets:3,rest:60},
   {id:"d7",p:[P("Spinte manubri su panca piana","reps",8)],sets:4,rest:90,note:"Peso alto."},
   {id:"d8",p:[P("Pulley","reps",10)],sets:4,rest:75},
-  {id:"d9",p:[P("Push down al cavo alto","reps",12),P("Curl con due manubri","reps",12)],sets:3,rest:75,note:"Superserie: recupero dopo entrambi."}]}
+  {id:"d9",p:[P("Push down al cavo alto","reps",12),P("Curl con due manubri","reps",12)],sets:3,rest:75,note:"Superserie: recupero dopo entrambi."}],
+  /* esercizi sostituiti: non compaiono più in seduta, restano per lo storico */
+  old:[{id:"d3",p:[P("Calf raise al multipower","reps",8)],sets:3,rest:60,note:"Bipodalico, peso alto. Sostituito il 27 ottobre."}]}
 }}
 ];
 })();
