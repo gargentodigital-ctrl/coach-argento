@@ -145,6 +145,7 @@ const MAP={
  "Calf raise su leg press":["lpcalf","Gambe tese, spingi con l'avampiede e tieni 2 secondi."],
  "Tapis roulant":["tread","Alterna 1 minuto di camminata e 1 di corsa."],
  "Tenuta isometrica su avampiede al multipower":["isoSmith","Sali in punta sotto il bilanciere e tieni fermo."],
+ "Tenuta isometrica su avampiede alla leg press basculante":["lpcalf","Una gamba alla volta: spingi sull'avampiede e tieni fermo per tutto il tempo."],
  "Calf raise al multipower":["calfSmith","Tallone giù, poi su in punta piena con peso alto."],
  "Calf raise su leg press gamba singola":["lpcalf","Un piede alla volta: 8 spinte con l'avampiede, poi tieni 10 secondi alla fine."],
  "Leg curl":["legcurl","Bacino schiacciato sulla panca, porta i talloni verso i glutei."],
