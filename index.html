@@ -105,6 +105,13 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .danger-btn{color:var(--bad)}
 .winp{width:100%;height:48px;border-radius:var(--r);border:1px solid var(--line);background:var(--sunk);color:var(--fg);font:inherit;font-size:1.3rem;font-weight:600;text-align:center;font-variant-numeric:tabular-nums}
 .watchline{font-size:.88rem;font-weight:600;color:var(--fg);background:var(--sunk);border-radius:8px;padding:6px 10px;align-self:flex-start}
+.walert{position:fixed;inset:0;z-index:35;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.wbox{width:100%;max-width:420px;background:#E6FF00;color:#000;border-radius:16px;padding:28px 20px 16px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.wmain{font-family:var(--display);font-weight:800;font-size:2.6rem;line-height:1;text-transform:uppercase;color:#000}
+.wsub{font-weight:700;color:#000;font-size:1rem}
+.wbox .wgo{width:100%;background:#000;color:#E6FF00;min-height:60px}
+.wbox .wno{color:#000;font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:8px}
+@media (prefers-reduced-motion:no-preference){.wbox{animation:wpop .25s ease-out}@keyframes wpop{from{transform:scale(.92);opacity:.4}to{transform:none;opacity:1}}}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -663,7 +670,13 @@ function renderHome(){
    <div class="card"><div class="eyebrow">Cosa c'è dentro</div>
      ${PLAN[S.sel].ex.map(e=>{const c=cfg(e,S.v);return `<div class="spread"><span>${(e.leg?[e.p[0]]:e.p).map(p=>ytLink(p.n)).join(" + ")}</span><span class="muted num" style="white-space:nowrap">${tgtStr(e,c)}</span></div>`}).join("")}
    </div>
-  </div>${nav("home")}`;
+  </div>${nav("home")}
+  ${S.watchAlert?`<div class="walert" data-act="watchno" role="alertdialog" aria-modal="true" aria-labelledby="wat"><div class="wbox">
+    <div class="wmain" id="wat">Avvia Apple Watch!</div>
+    <div class="wsub">Allenamento → Rafforzamento funzionale</div>
+    <button class="btn wgo" data-act="watchgo">Fatto, inizia la seduta ${esc(S.sel||"")}</button>
+    <button class="wno" data-act="watchno">Annulla</button>
+  </div></div>`:""}`;
 }
 
 function renderWork(){
@@ -908,7 +921,9 @@ app.addEventListener("click",e=>{
    case"go":S.view=v;S.confirm=null;render();window.scrollTo(0,0);break;
    case"sel":S.sel=v;S.v=nextVar(v);render();break;
    case"var":S.v=+v;render();break;
-   case"start":startWorkout();break;
+   case"start":unlockAudio();S.watchAlert=true;render();break;
+   case"watchgo":S.watchAlert=false;startWorkout();break;
+   case"watchno":if(e.target.closest(".wbox")&&b.classList.contains("walert"))break;S.watchAlert=false;render();break;
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
    case"discard":S.w=null;saveDraft();render();break;
    case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[0].n):1;const A=curArr();
