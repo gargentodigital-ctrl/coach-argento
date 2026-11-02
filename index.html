@@ -310,6 +310,9 @@ const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",
 /* incrementi reali in palestra: cavi, leg extension e leg curl 5 kg · manubri 2,5 kg per manubrio · bilanciere 2,5 kg totali (dischi da 1,25) · leg press 2,5 kg */
 const CABLE=/cavo|cavi|pulley|lat machine|low row|vertical traction|push down|leg extension|leg curl/i;
 function stepFor(name,kg){return CABLE.test(name)?5:2.5}
+/* prossimo / precedente peso realizzabile sulla griglia dell'attrezzo (es. 23 → 25 su un pacco da 5) */
+const gridUp=(kg,st)=>Math.round(Math.ceil((kg+0.001)/st)*st*100)/100;
+const gridDown=(kg,st)=>Math.max(0,Math.round(Math.floor((kg-0.001)/st)*st*100)/100);
 /* ======= OBIETTIVO DI OGGI (dall'ultima volta) ======= */
 function tendonWarnNow(){
   const m=monday(new Date());const cur=tendonStats(m);if(cur.wl.length)return cur.warn;
@@ -334,9 +337,9 @@ function suggFor(w,ex){
       const rep2=Object.keys(cnt).filter(k=>cnt[k]>1);
       /* peso più usato; se ogni serie ha un peso diverso (piramide) uso quello centrale */
       const mode=rep2.length?+rep2.sort((a,b)=>cnt[b]-cnt[a]||b-a)[0]:srt[Math.floor((srt.length-1)/2)];
-      const to=Math.min(maxKg,Math.round((mode+stepFor(p.n,mode))*10)/10);
+      const st=stepFor(p.n);let to=Math.min(gridUp(mode,st),maxKg);if(Math.abs(to/st-Math.round(to/st))>1e-6)to=gridDown(to,st);
       parts.push({j,kind:"up",kg:to,text:`${side(j)}l'ultima volta hai cambiato peso tra le serie (${kgs.map(kgf).join(" · ")}). Oggi tutte le serie a ${kgf(to)} kg: il riscaldamento fallo prima, fuori conteggio.`,short:`${side(j)}tutte a ${kgf(to)} kg`});return}
-    if(hit){const to=Math.round((maxKg+stepFor(p.n,maxKg))*10)/10;parts.push({j,kind:"up",kg:to,text:`${side(j)}l'ultima volta hai chiuso tutte le serie a ${kgf(maxKg)} kg. Oggi prova ${kgf(to)} kg.`,short:`${side(j)}${kgf(to)} kg`});return}
+    if(hit){const to=gridUp(maxKg,stepFor(p.n,maxKg));parts.push({j,kind:"up",kg:to,text:`${side(j)}l'ultima volta hai chiuso tutte le serie a ${kgf(maxKg)} kg. Oggi prova ${kgf(to)} kg.`,short:`${side(j)}${kgf(to)} kg`});return}
     if(missed>0)parts.push({j,kind:"hold",kg:maxKg,goal,text:`${side(j)}l'ultima volta ti sono mancate ${missed}${unit} a ${kgf(maxKg)} kg. Resta a ${kgf(maxKg)} kg e chiudi tutte le serie.`,short:`${side(j)}chiudi tutto a ${kgf(maxKg)} kg`});
     const hist=sorted().filter(x=>x.sed===w.sed&&inActive(x)&&(x.v||0)===(w.v||0)&&x.sets&&x.sets[ex.id]).slice(0,3);
     if(!hit&&hist.length===3){const m=hist.map(x=>Math.max(...x.sets[ex.id].filter(Boolean).map(s=>s.p[j]?.kg||0)));if(m.every(v=>v===m[0]))info.push(`Fermo a ${kgf(m[0])} kg da 3 sedute: allunga il recupero di 15".`)}
@@ -551,7 +554,7 @@ function analyze(key,tw){
         const lbl=ex.var?` (${c.sets}×${p.v})`:"";
         if(hit&&tw&&tw.warn&&calfOf(l).includes(ex.id))msgs.push(["warn",`${p.n}: tutto chiuso a ${kgf(maxKg)} kg`,"Saliresti di carico, ma il tendine questa settimana è sopra la tua media. Resta qui."]);
         else if(hit&&sets.filter(s=>(s.p[j]?.kg||0)>=maxKg-0.01).length<Math.ceil(c.sets*0.75))msgs.push(["push",`${p.n}${lbl}: peso cambiato tra le serie (${kgs.map(kgf).join(" · ")})`,`Prossima volta un solo peso per tutte le serie, riscaldamento fuori conteggio.`]);
-        else if(hit)msgs.push(["push",`${p.n}${lbl}: tutto chiuso a ${kgf(maxKg)} kg`,`Prossima volta +${kgf(stepFor(p.n,maxKg))} kg.`]);
+        else if(hit)msgs.push(["push",`${p.n}${lbl}: tutto chiuso a ${kgf(maxKg)} kg`,`Prossima volta ${kgf(gridUp(maxKg,stepFor(p.n)))} kg.`]);
         else if(missed>c.sets)msgs.push(["warn",`${p.n}${lbl}: ${missed} reps mancate a ${kgf(maxKg)} kg`,"Resta su questo carico finché non le chiudi tutte. Non salire."]);
         if(prMax!==null&&maxKg<prMax)msgs.push(["bad",`${p.n}: calato da ${kgf(prMax)} a ${kgf(maxKg)} kg`,"Se non era voluto, capisci perché: sonno, recupero, fretta."]);
         const hist=sorted().filter(x=>x.sed===l.sed&&(x.v||0)===(l.v||0)&&x.sets&&x.sets[ex.id]&&new Date(x.date)<=new Date(l.date)).slice(0,3);
@@ -939,7 +942,7 @@ app.addEventListener("click",e=>{
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
    case"discard":S.w=null;saveDraft();render();break;
    case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[Math.min(j,ex.p.length-1)].n):1;const A=curArr();
-     const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=Math.max(0,Math.round((cur+(a==="inc"?step:-step))*10)/10);
+     const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=f==="kg"?(a==="inc"?gridUp(cur,step):gridDown(cur,step)):Math.max(0,cur+(a==="inc"?1:-1));
      const inp=document.getElementById(f+j);if(inp)inp.value=String(A[j][f]).replace(".",",");saveDraft();break}
    case"editset":startEdit(viewIdx(),+v);break;
    case"canceledit":S.edit=null;backToRest();render();break;
