@@ -307,8 +307,8 @@ function toast(t){const el=document.getElementById("toast");el.textContent=t;el.
 
 /* ======= WORKOUT LOGIC ======= */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-/* incrementi reali in palestra: cavi 5 kg · manubri 2,5 kg per manubrio · bilanciere 2,5 kg totali (dischi da 1,25) · macchine 2,5 kg */
-const CABLE=/cavo|cavi|pulley|lat machine|low row|vertical traction|push down/i;
+/* incrementi reali in palestra: cavi, leg extension e leg curl 5 kg · manubri 2,5 kg per manubrio · bilanciere 2,5 kg totali (dischi da 1,25) · leg press 2,5 kg */
+const CABLE=/cavo|cavi|pulley|lat machine|low row|vertical traction|push down|leg extension|leg curl/i;
 function stepFor(name,kg){return CABLE.test(name)?5:2.5}
 /* ======= OBIETTIVO DI OGGI (dall'ultima volta) ======= */
 function tendonWarnNow(){
