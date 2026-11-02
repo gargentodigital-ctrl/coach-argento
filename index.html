@@ -121,6 +121,19 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .tog{width:52px;height:32px;border-radius:99px;background:var(--line);position:relative;flex:none}
 .tog i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
 .tog[aria-checked="true"]{background:var(--good)}.tog[aria-checked="true"] i{left:23px}
+.chatwrap{min-height:calc(100vh - 120px)}
+.chatlist{display:flex;flex-direction:column;gap:10px}
+.bub{max-width:88%;padding:10px 14px;border-radius:16px;line-height:1.45;overflow-wrap:anywhere}
+.bub p{margin:0 0 6px}.bub p:last-child{margin:0}.bub ul{margin:4px 0 6px;padding-left:20px}.bub li{margin:2px 0}
+.bub.me{align-self:flex-end;background:var(--accent);color:var(--accent-fg);border-bottom-right-radius:4px}
+.bub.ai{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.err{border-color:var(--bad)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px}
+.chip{flex:none;padding:8px 12px;border-radius:99px;background:var(--sunk);font-weight:600;font-size:.88rem;white-space:nowrap}
+.chatbar{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom,0px));display:flex;gap:8px;align-items:flex-end;background:var(--bg);padding-block:8px}
+.chatbar textarea{flex:1;min-height:48px;max-height:140px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;padding:12px;resize:none}
+.chatbar .btn{min-height:48px}
+.keyin{width:100%;height:48px;border-radius:var(--r);border:1px solid var(--line);background:var(--sunk);color:var(--fg);font:inherit;padding:0 12px}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -178,7 +191,7 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 
 /* nav */
 .nav{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--surface);border-top:1px solid var(--line);padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:flex;justify-content:center}
-.nav div{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;width:100%;max-width:560px}
+.nav div{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;width:100%;max-width:560px}
 .nav button{min-height:48px;border-radius:8px;font-family:var(--display);font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .nav button[aria-current="page"]{background:var(--sunk);color:var(--fg)}
 .rpe{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
@@ -635,12 +648,14 @@ function render(){
   if(S.view==="week")return renderWeek();
   if(S.view==="hist")return renderHist();
   if(S.view==="settings")return renderSettings();
+  if(S.view==="chat")return renderChat();
   renderHome();
 }
 function nav(cur){return `<nav class="nav"><div>
  <button data-act="go" data-v="home" ${cur==="home"?'aria-current="page"':""}>Oggi</button>
  <button data-act="go" data-v="week" ${cur==="week"?'aria-current="page"':""}>Check</button>
- <button data-act="go" data-v="hist" ${cur==="hist"?'aria-current="page"':""}>Storico</button></div></nav>`}
+ <button data-act="go" data-v="hist" ${cur==="hist"?'aria-current="page"':""}>Storico</button>
+ <button data-act="go" data-v="chat" ${cur==="chat"?'aria-current="page"':""}>Coach</button></div></nav>`}
 
 /* stima durata seduta: lavoro + recuperi + cambio attrezzo; se ci sono sedute vere uso la loro media */
 function estMin(sed){
@@ -884,7 +899,8 @@ function renderWeek(){
     <span class="muted" style="font-size:.85rem">Linea tratteggiata = ${NS()} sedute. Il numero che conta più di tutti.</span></div>
    <div class="card"><div class="eyebrow">Check con Claude</div>
     <p style="margin:0">Manda il report di questa settimana a Claude: legge carichi, tendine e note e ti dice cosa cambiare.</p>
-    <button class="btn btn-primary" data-act="share" data-v="${key}">Invia a Claude</button>
+    <button class="btn btn-primary" data-act="asksync" data-v="Fammi il check della settimana ${key.split("-W")[1]}: cosa va bene, cosa cambiare, carichi della prossima settimana.">Chiedi al coach in app</button>
+    <button class="btn btn-ghost" data-act="share" data-v="${key}">Invia a Claude</button>
     <button class="btn btn-ghost" data-act="copyrep" data-v="${key}">Copia report</button>
     <span class="muted" style="font-size:.85rem">Invia apre la condivisione di iPhone: scegli l'app Claude. Copia, invece, lo incolli tu in chat.</span></div>
   </div>${nav("week")}`;
@@ -924,6 +940,87 @@ function renderHist(){
   </div>${nav("hist")}`;
 }
 const GEAR='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.4 7.4 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.4l-.4 2.7a7.4 7.4 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1.1.7 1.7 1l.4 2.6c0 .3.2.5.5.5h4c.3 0 .5-.2.5-.4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6L19.4 13ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>';
+/* ======= COACH AI (chat con Claude, chiave API salvata solo su questo telefono) ======= */
+const CHAT_MODELS=[["claude-sonnet-5-5","Sonnet · consigliato"],["claude-haiku-5-5","Haiku · più economico"]];
+const chatKey=()=>LS.get("pt-apikey","");
+const chatModel=()=>LS.get("pt-model",CHAT_MODELS[0][0]);
+let chatMsgs=LS.get("pt-chat",[]);let chatBusy=false,chatAbort=null;
+function saveChat(){chatMsgs=chatMsgs.slice(-60);LS.set("pt-chat",chatMsgs)}
+function planSummary(){return Object.entries(PLAN).map(([k,sd])=>`Seduta ${k} (${sd.t}): `+sd.ex.map(e=>{const c=cfg(e,nextVar(k));return `${exTitle(e,c)} ${tgtStr(e,c)}`}).join("; ")).join("\n")}
+function coachContext(){
+  const weeks=[0,1,2,3].map(i=>{const d=new Date();d.setDate(d.getDate()-7*i);return isoWeek(d)});
+  const reps=weeks.filter(k=>weekLogs(k).length).map(k=>buildReport(k).replace(/\nFammi il check settimanale.*$/s,""));
+  const st=LS.get("pt-steps",{});
+  return `Sei il personal trainer di Giovanni dentro la sua app "Coaching PT Gio". Rispondi in italiano, in modo diretto, pratico e onesto, con frasi brevi e indicazioni concrete (pesi, serie, cosa cambiare). Niente giri di parole.
+Contesto fisso:
+- Si allena 3-4 volte a settimana dal 2021. L'anno scorso ha avuto un grave infortunio al tendine d'Achille destro: gli esercizi di polpaccio sono riabilitazione indicata dal fisioterapista, si progredisce solo se dolore e rigidità restano bassi.
+- Da fine ottobre 2026 segnala un leggero fastidio alla spalla sinistra: prudenza con spinte sopra la testa, alzate laterali e push up con rialzo.
+- Non sei un medico né il suo fisioterapista: se descrive dolore che aumenta, persiste, lo sveglia di notte o lo limita, digli chiaramente di farsi vedere dal fisio. Non fare diagnosi.
+- Incrementi di peso possibili nella sua palestra: ${STEPCAT.map(c=>c.lab+" "+String(st[c.k]||c.d).replace(".",",")+" kg").join(", ")}. Proponi solo pesi realizzabili.
+- Regola di metodo: riscaldamento fuori conteggio, poi tutte le serie allenanti allo stesso peso.
+Scheda attiva "${ACTIVE.name}" (le sedute A e C alternano due varianti a settimana):
+${planSummary()}
+Dati recenti dall'app (ultime settimane, la più recente per prima):
+${reps.length?reps.join("\n\n"):"Nessuna seduta registrata nelle ultime 4 settimane."}
+Oggi è ${new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}.`;
+}
+function mdLite(t){
+  let h=esc(t);
+  h=h.replace(/\*\*(.+?)\*\*/g,"<b>$1</b>");
+  const lines=h.split("\n");let out="",inList=false;
+  lines.forEach(l=>{const m=l.match(/^\s*(?:[-•*]|\d+[.)])\s+(.*)/);
+    if(m){if(!inList){out+="<ul>";inList=true}out+=`<li>${m[1]}</li>`}
+    else{if(inList){out+="</ul>";inList=false}if(/^#{1,4}\s/.test(l))out+=`<p><b>${l.replace(/^#{1,4}\s/,"")}</b></p>`;else if(l.trim())out+=`<p>${l}</p>`}});
+  if(inList)out+="</ul>";return out;
+}
+async function sendChat(text){
+  text=(text||"").trim();if(!text||chatBusy)return;
+  if(!chatKey()){toast("Inserisci prima la chiave API nelle Impostazioni");S.view="settings";render();return}
+  if(!navigator.onLine){toast("Sei offline: il coach risponde solo con internet");return}
+  chatMsgs.push({role:"user",content:text,t:Date.now()});const ans={role:"assistant",content:"",t:Date.now()};chatMsgs.push(ans);
+  chatBusy=true;S.chatDraft="";saveChat();render();scrollChat();
+  const history=chatMsgs.slice(0,-1).filter(m=>m.content).slice(-14).map(m=>({role:m.role,content:m.content}));
+  while(history.length&&history[0].role!=="user")history.shift();
+  chatAbort=new AbortController();
+  try{
+    const res=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",signal:chatAbort.signal,
+      headers:{"content-type":"application/json","x-api-key":chatKey(),"anthropic-version":"2023-06-01","anthropic-dangerous-direct-browser-access":"true"},
+      body:JSON.stringify({model:chatModel(),max_tokens:1200,stream:true,system:coachContext(),messages:history})});
+    if(!res.ok){let msg="";try{const j=await res.json();msg=j.error&&j.error.message||""}catch{}
+      ans.content=res.status===401?"La chiave API non è valida. Controllala nelle Impostazioni.":res.status===429?"Troppe richieste o credito esaurito: riprova tra poco o controlla il credito sulla Console Anthropic.":res.status===404?"Modello non disponibile: scegline un altro nelle Impostazioni.":`Errore ${res.status}. ${msg}`;ans.err=true;
+    }else{
+      const rd=res.body.getReader();const dec=new TextDecoder();let buf="",last=0;
+      while(true){const {done,value}=await rd.read();if(done)break;buf+=dec.decode(value,{stream:true});
+        let i;while((i=buf.indexOf("\n\n"))>=0){const ev=buf.slice(0,i);buf=buf.slice(i+2);
+          const dl=ev.split("\n").find(x=>x.startsWith("data:"));if(!dl)continue;
+          try{const d=JSON.parse(dl.slice(5));if(d.type==="content_block_delta"&&d.delta&&d.delta.type==="text_delta")ans.content+=d.delta.text;
+            if(d.type==="error"){ans.content+="\n\nErrore: "+(d.error&&d.error.message||"risposta interrotta");ans.err=true}}catch{}}
+        if(Date.now()-last>120){last=Date.now();const el=document.getElementById("chatlast");if(el){el.innerHTML=mdLite(ans.content);scrollChat()}}
+      }
+    }
+  }catch(e){if(e&&e.name==="AbortError")ans.content+=ans.content?"\n\n(interrotto)":"(interrotto)";else{ans.content="Connessione non riuscita. Controlla internet e riprova.";ans.err=true}}
+  if(!ans.content)ans.content="Nessuna risposta. Riprova.";
+  chatBusy=false;chatAbort=null;saveChat();if(S.view==="chat"){render();scrollChat()}
+}
+function scrollChat(){const el=document.getElementById("chatlist");if(el)el.scrollTop=el.scrollHeight;window.scrollTo(0,document.body.scrollHeight)}
+const CHAT_QUICK=["Com'è andata questa settimana?","Cosa carico nella prossima seduta?","La spalla sinistra mi dà fastidio: cosa adatto oggi?","Come sta andando il tendine?"];
+function renderChat(){
+  const has=!!chatKey();
+  app.innerHTML=`<div class="wrap chatwrap">
+   <div class="spread"><div><div class="eyebrow">Coach AI</div><h1>Chiedi al coach</h1></div>${chatMsgs.length?`<button class="back" data-act="chatclear">${S.chatConfirm?"Tocca ancora":"Svuota"}</button>`:""}</div>
+   ${has?"":`<div class="card" style="border-color:var(--accent)"><div class="eyebrow">Da configurare</div><p style="margin:0">Per usare il coach serve la tua chiave API Anthropic. La inserisci una volta nelle Impostazioni e resta solo su questo telefono.</p><button class="btn btn-primary" data-act="go" data-v="settings">Vai alle Impostazioni</button></div>`}
+   <div class="chatlist" id="chatlist">
+    ${chatMsgs.length?chatMsgs.map((m,i)=>`<div class="bub ${m.role==="user"?"me":"ai"}${m.err?" err":""}" ${i===chatMsgs.length-1&&m.role==="assistant"?'id="chatlast"':""}>${m.role==="user"?`<p>${esc(m.content)}</p>`:(m.content?mdLite(m.content):'<p class="muted">Sto leggendo i tuoi dati…</p>')}</div>`).join(""):
+     `<div class="chatempty"><p class="muted">Il coach conosce la tua scheda, le ultime 4 settimane di sedute, il tendine e la spalla. Prova con una di queste:</p></div>`}
+   </div>
+   ${!chatBusy&&!chatMsgs.length?`<div class="chips">${CHAT_QUICK.map(q=>`<button class="chip" data-act="chatq" data-v="${esc(q)}">${esc(q)}</button>`).join("")}</div>`:""}
+   <div class="chatbar">
+    <textarea id="chatin" data-f="chatin" rows="1" placeholder="Scrivi al coach…" ${has?"":"disabled"}>${esc(S.chatDraft||"")}</textarea>
+    ${chatBusy?`<button class="btn btn-ghost" data-act="chatstop">Stop</button>`:`<button class="btn btn-primary" data-act="chatsend" ${has?"":"disabled"}>Invia</button>`}
+   </div>
+  </div>${nav("chat")}`;
+}
+
 function renderSettings(){
   const st=LS.get("pt-steps",{});const wa=LS.get("pt-watchalert",true);
   app.innerHTML=`<div class="wrap">
@@ -934,6 +1031,12 @@ function renderSettings(){
     <button class="btn btn-ghost" data-act="testsound">🔊 Prova il suono</button></div>
    <div class="card"><div class="eyebrow">Apple Watch</div>
     <div class="spread"><span>Avviso "Avvia Apple Watch!" a inizio seduta</span><button class="tog" role="switch" aria-checked="${wa}" data-act="togwatch"><i></i></button></div></div>
+   <div class="card"><div class="eyebrow">Coach AI</div>
+    <p style="margin:0;font-size:.92rem">Serve una chiave API Anthropic: la crei su <b>console.anthropic.com</b> → API Keys. Resta salvata solo su questo telefono. Ogni domanda costa pochi centesimi: imposta un limite di spesa sulla Console.</p>
+    ${chatKey()?`<div class="spread"><span>Chiave salvata ····${esc(chatKey().slice(-4))}</span><button class="danger" data-act="keydel">Cancella</button></div>`:
+     `<div class="fld"><label for="apikey">Chiave API</label><input id="apikey" class="keyin" type="password" autocomplete="off" placeholder="sk-ant-…"></div><button class="btn btn-primary" data-act="keysave">Salva chiave</button>`}
+    <div class="fld"><label>Modello</label><div class="seg">${CHAT_MODELS.map(([m,l])=>`<button data-act="setmodel" data-v="${m}" aria-pressed="${chatModel()===m}">${l}</button>`).join("")}</div></div>
+   </div>
    <div class="card"><div class="eyebrow">Incrementi dei pesi</div>
     <p class="muted" style="margin:0;font-size:.9rem">Il passo minimo dei pesi nella tua palestra. Lo usano gli Obiettivi di oggi e i pulsanti + e −.</p>
     ${STEPCAT.map(c=>{const v=st[c.k]||c.d;return `<div class="steprow"><div><b>${c.lab}</b><span class="muted">${c.ex}</span></div>
@@ -998,6 +1101,14 @@ app.addEventListener("click",e=>{
    case"endsave":S.endMenu=false;goFinish();break;
    case"enddiscard":if(S.endConfirm)discardWorkout();else{S.endConfirm=true;render()}break;
    case"back":S.view="work";render();break;
+   case"keysave":{const k=(document.getElementById("apikey").value||"").trim();if(!/^sk-ant-/.test(k)){toast("La chiave deve iniziare con sk-ant-");break}LS.set("pt-apikey",k);toast("Chiave salvata su questo telefono");render();break}
+   case"keydel":LS.del("pt-apikey");toast("Chiave cancellata");render();break;
+   case"setmodel":LS.set("pt-model",v);render();break;
+   case"chatsend":sendChat(S.chatDraft);break;
+   case"chatq":sendChat(v);break;
+   case"chatstop":if(chatAbort)chatAbort.abort();break;
+   case"chatclear":if(S.chatConfirm){chatMsgs=[];saveChat();S.chatConfirm=false}else S.chatConfirm=true;render();break;
+   case"asksync":S.view="chat";render();sendChat(v);break;
    case"togwatch":LS.set("pt-watchalert",!LS.get("pt-watchalert",true));render();break;
    case"setstep":{const st=LS.get("pt-steps",{});st[b.dataset.k]=+v;LS.set("pt-steps",st);toast("Incremento aggiornato");render();break}
    case"testsound":keepAwake();setTimeout(()=>{beep(3);setTimeout(()=>toast(wakeOk===false?"Se non hai sentito: alza il volume. Schermo sempre acceso non disponibile qui.":"Se non hai sentito niente, alza il volume multimediale."),900)},700);break;
@@ -1024,9 +1135,10 @@ app.addEventListener("click",e=>{
    case"del":if(S.confirm===v){deleteLog(v);S.confirm=null;S.open=null;toast("Seduta eliminata")}else S.confirm=v;render();break;
   }
 });
+app.addEventListener("keydown",e=>{if(e.target.id==="chatin"&&e.key==="Enter"&&!e.shiftKey&&!/iPhone|iPad|Android/i.test(navigator.userAgent)){e.preventDefault();sendChat(S.chatDraft)}});
 app.addEventListener("change",e=>{const t=e.target;if(t.id!=="restfile"||!t.files||!t.files[0])return;
   const fr=new FileReader();fr.onload=()=>{if(restore(String(fr.result))){S.restore="";render();window.scrollTo(0,0)}};fr.onerror=()=>toast("Non riesco a leggere il file");fr.readAsText(t.files[0]);t.value=""});
-app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}if(t.dataset.f==="wtxt"){S.watchTxt=t.value;return}if(t.dataset.f==="whr"){S.whr=t.value;return}
+app.addEventListener("input",e=>{const t=e.target;if(t.dataset.f==="note"){S.note=t.value;return}if(t.dataset.f==="restore"){S.restore=t.value;return}if(t.dataset.f==="impprog"){S.impprog=t.value;return}if(t.dataset.f==="wtxt"){S.watchTxt=t.value;return}if(t.dataset.f==="whr"){S.whr=t.value;return}if(t.dataset.f==="chatin"){S.chatDraft=t.value;t.style.height="auto";t.style.height=Math.min(140,t.scrollHeight)+"px";return}
   if(t.dataset.f&&S.w&&S.w.cur){curArr()[+t.dataset.j][t.dataset.f]=t.value;saveDraft()}});
 
 onWatchArrive();
