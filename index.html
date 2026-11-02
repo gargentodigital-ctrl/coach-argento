@@ -112,6 +112,15 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .wbox .wgo{width:100%;background:#000;color:#E6FF00;min-height:60px}
 .wbox .wno{color:#000;font-weight:700;text-decoration:underline;text-underline-offset:3px;padding:8px}
 @media (prefers-reduced-motion:no-preference){.wbox{animation:wpop .25s ease-out}@keyframes wpop{from{transform:scale(.92);opacity:.4}to{transform:none;opacity:1}}}
+.gear{width:44px;height:44px;border-radius:12px;background:var(--sunk);color:var(--fg);display:flex;align-items:center;justify-content:center;flex:none}
+.back{font-weight:600;color:var(--muted);padding:8px 0}
+.linkset{color:var(--accent);font-weight:600;text-align:left;padding:6px 0}
+.steprow{display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--line);padding-top:10px}
+.steprow>div:first-child{display:flex;flex-direction:column;gap:2px}.steprow .muted{font-size:.82rem}
+.stepseg{grid-template-columns:repeat(5,1fr)}.stepseg button{min-height:40px;font-variant-numeric:tabular-nums}
+.tog{width:52px;height:32px;border-radius:99px;background:var(--line);position:relative;flex:none}
+.tog i{position:absolute;top:3px;left:3px;width:26px;height:26px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:left .15s}
+.tog[aria-checked="true"]{background:var(--good)}.tog[aria-checked="true"] i{left:23px}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -308,8 +317,15 @@ function toast(t){const el=document.getElementById("toast");el.textContent=t;el.
 /* ======= WORKOUT LOGIC ======= */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 /* incrementi reali in palestra: cavi, leg extension e leg curl 5 kg · manubri 2,5 kg per manubrio · bilanciere 2,5 kg totali (dischi da 1,25) · leg press 2,5 kg */
-const CABLE=/cavo|cavi|pulley|lat machine|low row|vertical traction|push down|leg extension|leg curl/i;
-function stepFor(name,kg){return CABLE.test(name)?5:2.5}
+const STEPCAT=[
+ {k:"cavi",lab:"Cavi",ex:"pulley, low row, lat machine, vertical traction, alzata laterale, croci ai cavi, push down",re:/cavo|cavi|pulley|lat machine|low row|vertical traction|push down/i,d:5},
+ {k:"legmac",lab:"Leg extension e leg curl",ex:"pacco pesi",re:/leg extension|leg curl/i,d:5},
+ {k:"legpress",lab:"Leg press",ex:"leg press e leg press basculante",re:/leg press/i,d:2.5},
+ {k:"bil",lab:"Bilanciere",ex:"panca, rematore, spinte in alto, stacchi, French press, EZ curl (kg totali)",re:/bilanciere|multipower|french press|ez curl/i,d:2.5},
+ {k:"man",lab:"Manubri",ex:"per manubrio: croci, curl, spinte, stacchi, goblet, bulgarian, calf",re:/./,d:2.5}];
+const STEPOPT=[1,1.25,2,2.5,5];
+function stepCat(name){return STEPCAT.find(c=>c.re.test(name))}
+function stepFor(name,kg){const c=stepCat(name);const st=LS.get("pt-steps",{});return st[c.k]||c.d}
 /* prossimo / precedente peso realizzabile sulla griglia dell'attrezzo (es. 23 → 25 su un pacco da 5) */
 const gridUp=(kg,st)=>Math.round(Math.ceil((kg+0.001)/st)*st*100)/100;
 const gridDown=(kg,st)=>Math.max(0,Math.round(Math.floor((kg-0.001)/st)*st*100)/100);
@@ -618,6 +634,7 @@ function render(){
   if(S.view==="finish"&&S.w)return renderFinish();
   if(S.view==="week")return renderWeek();
   if(S.view==="hist")return renderHist();
+  if(S.view==="settings")return renderSettings();
   renderHome();
 }
 function nav(cur){return `<nav class="nav"><div>
@@ -667,7 +684,7 @@ function renderHome(){
    <div class="spread"><div class="eyebrow">Settimana ${key.split("-W")[1]} · ${new Date().toLocaleDateString("it-IT",{weekday:"long",day:"numeric",month:"long"})}</div>
    <span class="sync muted">${logs.length?logs.length+(logs.length===1?" seduta salvata":" sedute salvate"):""}</span></div>
    ${newCard}
-   <div class="spread"><h1>Coaching PT Gio</h1><button class="btn btn-ghost" data-act="testsound" style="min-height:40px;font-size:1rem;padding:0 12px">🔊 Prova</button></div>
+   <div class="spread"><h1>Coaching PT Gio</h1><button class="gear" data-act="go" data-v="settings" aria-label="Impostazioni">${GEAR}</button></div>
    <div class="eyebrow" style="margin-top:-8px">${esc(ACTIVE.name)}</div>
    <p class="coach">${esc(head)}</p>
    <div class="weekbar" aria-label="Sedute fatte questa settimana: ${wl.length} su ${NS()}">${SEDS.map((_,i)=>i).map(i=>`<span class="${i<wl.length?"on":""}"></span>`).join("")}</div>
@@ -903,6 +920,25 @@ function renderHist(){
       ${watchPasteUI(l)}
       <button class="danger" data-act="del" data-v="${l.id}" style="align-self:flex-start;padding:6px 0">${S.confirm===l.id?"Tocca di nuovo per eliminare":"Elimina seduta"}</button>`:""}
     </div>`}).join(""):`<p class="muted">Nessuna seduta registrata con questa scheda.</p>`}</div>
+   <button class="linkset" data-act="go" data-v="settings">Backup, ripristino e nuove schede sono in Impostazioni →</button>
+  </div>${nav("hist")}`;
+}
+const GEAR='<svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path fill="currentColor" d="M19.4 13a7.6 7.6 0 0 0 0-2l2.1-1.6a.5.5 0 0 0 .1-.6l-2-3.5a.5.5 0 0 0-.6-.2l-2.5 1a7.4 7.4 0 0 0-1.7-1l-.4-2.6a.5.5 0 0 0-.5-.5h-4a.5.5 0 0 0-.5.4l-.4 2.7a7.4 7.4 0 0 0-1.7 1l-2.5-1a.5.5 0 0 0-.6.2l-2 3.5a.5.5 0 0 0 .1.6L4.6 11a7.6 7.6 0 0 0 0 2l-2.1 1.6a.5.5 0 0 0-.1.6l2 3.5c.1.2.4.3.6.2l2.5-1c.5.4 1.1.7 1.7 1l.4 2.6c0 .3.2.5.5.5h4c.3 0 .5-.2.5-.4l.4-2.7c.6-.3 1.2-.6 1.7-1l2.5 1c.2.1.5 0 .6-.2l2-3.5a.5.5 0 0 0-.1-.6L19.4 13ZM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7Z"/></svg>';
+function renderSettings(){
+  const st=LS.get("pt-steps",{});const wa=LS.get("pt-watchalert",true);
+  app.innerHTML=`<div class="wrap">
+   <div class="spread"><button class="back" data-act="go" data-v="home">← Indietro</button></div>
+   <h1>Impostazioni</h1>
+   <div class="card"><div class="eyebrow">Audio</div>
+    <p style="margin:0">Controlla che il beep di fine recupero si senta e non fermi la musica.</p>
+    <button class="btn btn-ghost" data-act="testsound">🔊 Prova il suono</button></div>
+   <div class="card"><div class="eyebrow">Apple Watch</div>
+    <div class="spread"><span>Avviso "Avvia Apple Watch!" a inizio seduta</span><button class="tog" role="switch" aria-checked="${wa}" data-act="togwatch"><i></i></button></div></div>
+   <div class="card"><div class="eyebrow">Incrementi dei pesi</div>
+    <p class="muted" style="margin:0;font-size:.9rem">Il passo minimo dei pesi nella tua palestra. Lo usano gli Obiettivi di oggi e i pulsanti + e −.</p>
+    ${STEPCAT.map(c=>{const v=st[c.k]||c.d;return `<div class="steprow"><div><b>${c.lab}</b><span class="muted">${c.ex}</span></div>
+      <div class="seg stepseg">${STEPOPT.map(o=>`<button data-act="setstep" data-k="${c.k}" data-v="${o}" aria-pressed="${v===o}">${String(o).replace(".",",")}</button>`).join("")}</div></div>`}).join("")}
+   </div>
    <div class="card"><div class="eyebrow">Caricare una nuova scheda</div>
     <p style="margin:0">Manda a Claude in chat il PDF della scheda nuova: la trasforma e la aggiunge all'app, che ti propone di attivarla. In alternativa incolla qui il codice scheda che ti dà Claude.</p>
     <div class="fld"><label for="impprog">Codice scheda</label><textarea id="impprog" data-f="impprog" placeholder="Incolla qui il codice">${esc(S.impprog||"")}</textarea></div>
@@ -914,7 +950,8 @@ function renderHist(){
     <button class="btn btn-ghost" data-act="restore">Ripristina</button>
     <label class="btn btn-primary filebtn" for="restfile">Carica da file (backup o storico Hevy)</label>
     <input type="file" id="restfile" accept=".txt,.json,text/plain,application/json" hidden></div>
-  </div>${nav("hist")}`;
+   <p class="muted" style="font-size:.8rem;text-align:center">Scheda attiva: ${esc(ACTIVE.name)} · ${logs.length} sedute salvate</p>
+  </div>`;
 }
 function importProg(txt){
   try{const p=JSON.parse(txt.trim());if(!p.id||!p.name||!p.from||!p.seds)throw 0;
@@ -936,7 +973,7 @@ app.addEventListener("click",e=>{
    case"go":S.view=v;S.confirm=null;render();window.scrollTo(0,0);break;
    case"sel":S.sel=v;S.v=nextVar(v);render();break;
    case"var":S.v=+v;render();break;
-   case"start":unlockAudio();S.watchAlert=true;render();break;
+   case"start":unlockAudio();if(LS.get("pt-watchalert",true)){S.watchAlert=true;render()}else startWorkout();break;
    case"watchgo":S.watchAlert=false;startWorkout();break;
    case"watchno":if(e.target.closest(".wbox")&&b.classList.contains("walert"))break;S.watchAlert=false;render();break;
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
@@ -961,6 +998,8 @@ app.addEventListener("click",e=>{
    case"endsave":S.endMenu=false;goFinish();break;
    case"enddiscard":if(S.endConfirm)discardWorkout();else{S.endConfirm=true;render()}break;
    case"back":S.view="work";render();break;
+   case"togwatch":LS.set("pt-watchalert",!LS.get("pt-watchalert",true));render();break;
+   case"setstep":{const st=LS.get("pt-steps",{});st[b.dataset.k]=+v;LS.set("pt-steps",st);toast("Incremento aggiornato");render();break}
    case"testsound":keepAwake();setTimeout(()=>{beep(3);setTimeout(()=>toast(wakeOk===false?"Se non hai sentito: alza il volume. Schermo sempre acceso non disponibile qui.":"Se non hai sentito niente, alza il volume multimediale."),900)},700);break;
    case"vid":if(window.ExAnim)ExAnim.open(v);break;
    case"rpe":S.rpe=+v;render();break;
