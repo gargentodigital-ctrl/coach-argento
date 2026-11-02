@@ -307,7 +307,9 @@ function toast(t){const el=document.getElementById("toast");el.textContent=t;el.
 
 /* ======= WORKOUT LOGIC ======= */
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-function stepFor(name,kg){if(kg!=null&&kg<20)return 1;return /manubri|curl con due/i.test(name)?2:2.5}
+/* incrementi reali in palestra: cavi 5 kg · manubri 2,5 kg per manubrio · bilanciere 2,5 kg totali (dischi da 1,25) · macchine 2,5 kg */
+const CABLE=/cavo|cavi|pulley|lat machine|low row|vertical traction|push down/i;
+function stepFor(name,kg){return CABLE.test(name)?5:2.5}
 /* ======= OBIETTIVO DI OGGI (dall'ultima volta) ======= */
 function tendonWarnNow(){
   const m=monday(new Date());const cur=tendonStats(m);if(cur.wl.length)return cur.warn;
@@ -936,7 +938,7 @@ app.addEventListener("click",e=>{
    case"watchno":if(e.target.closest(".wbox")&&b.classList.contains("walert"))break;S.watchAlert=false;render();break;
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
    case"discard":S.w=null;saveDraft();render();break;
-   case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[0].n):1;const A=curArr();
+   case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[Math.min(j,ex.p.length-1)].n):1;const A=curArr();
      const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=Math.max(0,Math.round((cur+(a==="inc"?step:-step))*10)/10);
      const inp=document.getElementById(f+j);if(inp)inp.value=String(A[j][f]).replace(".",",");saveDraft();break}
    case"editset":startEdit(viewIdx(),+v);break;
