@@ -250,6 +250,13 @@ const sorted=()=>[...logs].sort((a,b)=>new Date(b.date)-new Date(a.date));
 PROGS=allProgs();
 if(logs.some(l=>!l.prog)){logs=logs.map(l=>l.prog?l:{...l,prog:DEF_PROG});LS.set("pt-logs",logs)}
 (function(){const d=LS.get("pt-draft",null);let id=d&&d.prog||LS.get("pt-prog",null);if(!id||progById(id).archived){const live=PROGS.filter(p=>!p.archived);const last=[...logs].filter(l=>!progOf(l).archived).sort((a,b)=>new Date(b.date)-new Date(a.date))[0];id=last?last.prog:live[live.length-1].id}setActive(id);LS.set("pt-prog",ACTIVE.id)})();
+/* migrazione una tantum: French press + EZ curl da "kg per lato" a "kg totali" (sedute prima del 2 novembre) */
+(function(){if(LS.get("pt-mig-a7",false))return;let n=0;
+  logs=logs.map(l=>{if((l.prog||DEF_PROG)!=="argento5"||!l.sets||!l.sets.a7||l.date>="2026-11-01T23:00:00.000Z")return l;
+    n++;return {...l,sets:{...l.sets,a7:l.sets.a7.map(s=>s?{p:s.p.map(x=>({...x,kg:(x.kg||0)*2}))}:s)}}});
+  if(n)LS.set("pt-logs",logs);LS.set("pt-mig-a7",true);
+  const d=LS.get("pt-draft",null);if(d&&d.data&&d.data.a7&&d.start<"2026-11-01T23:00:00.000Z"){d.data.a7=d.data.a7.map(s=>s?{p:s.p.map(x=>({...x,kg:(x.kg||0)*2}))}:s);LS.set("pt-draft",d)}
+})();
 const NS=()=>SEDS.length;
 const inActive=l=>progOf(l).id===ACTIVE.id;
 

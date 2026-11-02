@@ -14,7 +14,7 @@ window.PROGRAMS=[
   {id:"a4",p:[P("Croci con manubri","reps",12),P("Deficit push up","max",0,false)],sets:4,rest:90,note:"Superserie: croci e subito push up al cedimento. Recupero solo dopo entrambi."},
   {id:"a5",p:[P("Pulley braccio singolo","reps",10)],sets:3,rest:45,side:1,note:"Per braccio. Recupero dopo il secondo braccio."},
   {id:"a6",p:[P("Low row machine","reps",12)],sets:3,rest:60},
-  {id:"a7",p:[P("French press","reps",10),P("EZ curl","reps",10)],sets:3,rest:60,note:"Superserie: recupero dopo entrambi."},
+  {id:"a7",p:[P("French press","reps",10),P("EZ curl","reps",10)],sets:3,rest:60,note:"Superserie: recupero dopo entrambi. Kg totali sul bilanciere (non per lato)."},
   {id:"a8",p:[P("Alzata laterale al cavo basso","reps",12)],sets:3,rest:60,side:1,note:"Per lato. 2 o 3 serie: la terza solo se la tecnica regge."}]},
  B:{t:"Lower forza",ex:[
   {id:"b1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
