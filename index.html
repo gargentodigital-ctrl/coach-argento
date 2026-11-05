@@ -136,6 +136,10 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .chatbar textarea{flex:1;min-height:48px;max-height:140px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--fg);font:inherit;padding:12px;resize:none}
 .chatbar .btn{min-height:48px}
 .keyin{width:100%;height:48px;border-radius:var(--r);border:1px solid var(--line);background:var(--sunk);color:var(--fg);font:inherit;padding:0 12px}
+.nextline{display:flex;flex-direction:column;gap:2px;border-top:1px dashed var(--line);padding-top:10px;margin-top:2px}
+.nextline .nlname{font-family:var(--display);font-weight:700;font-size:1.15rem;text-transform:uppercase;line-height:1.15}
+.nextline .nlname .vid{width:30px;height:24px}
+.nextline .muted{font-size:.88rem}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -784,6 +788,7 @@ function renderWork(){
     ${ex.note?`<div class="note">${esc(ex.note)}</div>`:""}
     ${c.sets>1?`<div class="setdots">${Array.from({length:c.sets},(_,k)=>{const d=mine[k];const t=d?d.p.map((p,j)=>c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join("+"):"S"+(k+1);const cls=E?(k===E.s?"cur":d?"done":""):(d?"done":k===w.s?"cur":"");return d?`<button class="${cls}" data-act="editset" data-v="${k}" aria-label="Correggi serie ${k+1}">${t}</button>`:`<b class="${cls}">${t}</b>`}).join("")}</div>
     ${!E&&mine.some(Boolean)?`<span class="muted" style="font-size:.85rem">Tocca una serie verde per correggerla</span>`:""}`:""}
+    ${E?"":nextExLine(vi,"Dopo questo esercizio")}
    </div>
    ${E?"":ex.free?`<div class="card tcard"><div class="worktimer" id="wt">${wt?mmss((Date.now()-wt.start)/1000):"0:00"}</div>
      <button class="btn btn-primary btn-big" data-act="${wt?"stopwork":"work"}">${wt?"Stop · fatto":"Avvia cronometro"}</button>
@@ -805,6 +810,15 @@ function renderWork(){
   </div>
   ${S.rest&&!S.rest.hidden?restHTML():""}
   ${S.endMenu?endMenuHTML():""}`;
+}
+/* riga "Poi:" con l'esercizio che viene dopo quello indicato */
+function nextExLine(i,label){
+  const w=S.w,exs=PLAN[w.sed].ex;
+  if(i>=exs.length-1)return `<div class="nextline"><span class="eyebrow">${label}</span><b>Ultimo esercizio della seduta</b></div>`;
+  const nx=exs[i+1],c=cfg(nx,w.v);const sg=(()=>{try{return suggActive(nx)}catch{return null}})();
+  const up=sg&&sg.parts.find(p=>p.kg!=null);const prev=prevSets(w.sed,w.v,nx.id);
+  const kg=up?up.kg:(prev?Math.max(...prev.sets[nx.id].filter(Boolean).map(s=>s.p[0]?.kg||0)):0);
+  return `<div class="nextline"><span class="eyebrow">${label}</span><span class="nlname">${nx.leg?ytLink(nx.p[0].n):nx.p.map(p=>ytLink(p.n)).join(" + ")}</span><span class="muted num">${tgtStr(nx,c)}${c.rest?` · rec ${c.rest}"`:""}${kg?` · ${kgf(kg)} kg`:""}</span></div>`;
 }
 function endMenuHTML(){
   const n=Object.values(S.w.data).reduce((a,x)=>a+x.filter(Boolean).length,0);
@@ -835,7 +849,8 @@ function restHTML(){
      ${prevTxt?`<div class="last">Ultima volta: <span class="num">${esc(prevTxt)}</span></div>`:""}
      ${(()=>{const sg=suggActive(ex);const a=sg?sg.parts.map(p=>p.short).filter(Boolean):[];return a.length?`<div class="sugg-mini">Obiettivo: ${esc(a.join(" · "))}</div>`:""})()}
    </div>`:`<div class="nextcard"><div class="eyebrow">Prossima serie</div>
-     <div class="target">Serie ${w.s+1} di ${c.sets} · ${ex.leg?tgt(c.p[0])+" per gamba":c.p.map(tgt).join(" + ")}${kgTxt?" · "+esc(kgTxt):""}</div></div>`;
+     <div class="target">Serie ${w.s+1} di ${c.sets} · ${ex.leg?tgt(c.p[0])+" per gamba":c.p.map(tgt).join(" + ")}${kgTxt?" · "+esc(kgTxt):""}</div>
+     ${nextExLine(w.i,"Poi")}</div>`;
   return `<div class="rest ${left<=0?"go":""} ${r.newEx?"withnext":""}" id="rest" role="timer" aria-live="polite">
    <div class="eyebrow" style="color:inherit">${left<=0?"Recupero finito":"Recupero"}</div>
    <div class="ring"><svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="46" fill="none" stroke="var(--sunk)" stroke-width="6"/><circle class="p" id="rp" cx="50" cy="50" r="46" fill="none" stroke="${left<=0?"var(--accent-fg)":"var(--accent)"}" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-Math.max(0,left)/r.total)}"/></svg>
