@@ -18,13 +18,6 @@
 <style>
 *,*::before,*::after{box-sizing:border-box}
 html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
-/* telefono in orizzontale: iOS non permette di bloccare la rotazione a un'app web, quindi copro lo schermo con un invito a girarlo */
-.rotate{display:none}
-@media (orientation:landscape) and (max-height:520px){
-  .rotate{display:flex;position:fixed;inset:0;z-index:100;background:var(--bg);color:var(--fg);flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
-  .rotate svg{width:64px;height:64px}
-  .rotate b{font-family:var(--display);font-size:1.6rem;text-transform:uppercase}
-  #app,.toast,.nav{visibility:hidden}
 }
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 body{margin:0}
@@ -219,13 +212,42 @@ textarea{width:100%;min-height:80px;border-radius:var(--r);border:1px solid var(
 .vidc{width:100%;height:auto;aspect-ratio:5/4;max-width:100%;background:var(--bg);border-radius:10px;display:block}
 .vidcue{margin:0;font-weight:500}.vidcap{margin:0;font-size:.85rem}
 .exname @media (prefers-reduced-motion:no-preference){.ring circle.p{transition:stroke-dashoffset .25s linear}}
+/* ===== telefono in orizzontale: layout a due colonne ===== */
+@media (orientation:landscape) and (max-height:540px){
+  .wrap{max-width:980px;padding-block:8px 76px;gap:12px}
+  h1{font-size:1.7rem}
+  .nav{padding-top:4px;padding-bottom:calc(4px + env(safe-area-inset-bottom,0px))}
+  .nav button{min-height:38px}
+  .sedute{grid-template-columns:repeat(4,1fr)}
+  .stats{grid-template-columns:repeat(3,1fr)}
+  body[data-view="work"] .wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-auto-flow:row dense;align-items:start;column-gap:14px}
+  body[data-view="work"] .wrap>*{grid-column:1/-1}
+  body[data-view="work"] .wrap>.excard{grid-column:1;grid-row:span 6}
+  body[data-view="work"] .wrap>.incard,body[data-view="work"] .wrap>.tcard,body[data-view="work"] .wrap>.sugg{grid-column:2}
+  body[data-view="work"] .exname{font-size:1.6rem}
+  body[data-view="work"] .btn-big{min-height:54px}
+  .worktimer{font-size:2.4rem}
+  .rest{display:grid;grid-template-columns:auto minmax(0,400px);align-content:center;justify-content:center;column-gap:28px;row-gap:10px;text-align:left;overflow-y:auto}
+  .rest>*{grid-column:2}
+  .rest .ring,.rest.withnext .ring{grid-column:1;grid-row:1/span 6;width:min(70vh,240px)}
+  .rest .ring .t b,.rest.withnext .ring .t b{font-size:3.6rem}
+  .rest .ctrl{max-width:none}
+  .rest .coach{margin:0;font-size:1.15rem}
+  .vidbox{max-width:760px;display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:10px 16px;align-items:center}
+  .vidbox>.spread{grid-column:1/-1}
+  .vidc{grid-row:span 3;max-height:62vh;width:auto;max-width:100%;justify-self:center}
+  .sheet{max-width:640px;border-radius:16px;margin-bottom:8px}
+  .wbox{max-width:560px;padding:18px 20px 12px;gap:10px}
+  .wmain{font-size:2rem}
+  .chatbar{bottom:calc(52px + env(safe-area-inset-bottom,0px))}
+}
 </style>
 
 </head>
 <body>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
-<div class="rotate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg><b>Gira il telefono in verticale</b><span class="muted">Il timer continua a contare.</span></div>
+
 
 <script src="anim.js"></script>
 <script src="programs.js"></script>
@@ -653,6 +675,7 @@ function restore(txt){
 /* ======= RENDER ======= */
 const app=document.getElementById("app");
 function render(){
+  try{document.body.dataset.view=(S.view==="work"&&S.w)?"work":S.view}catch{}
   if(S.view==="work"&&S.w)return renderWork();
   if(S.view==="finish"&&S.w)return renderFinish();
   if(S.view==="week")return renderWeek();
@@ -753,7 +776,7 @@ function renderWork(){
    ${S.rest&&S.rest.hidden?`<button class="restbar" data-act="showrest"><span>Recupero in corso: il timer continua</span><b id="rbar" class="num">${mmss((S.rest.end-Date.now())/1000)}</b><span>Torna al timer</span></button>`:""}
    ${E?`<div class="editbar"><b>Stai correggendo la serie ${E.s+1}</b><span>Cambia kg o reps e salva.</span></div>`:""}
    ${w.i===0&&w.s===0&&!E?`<p class="coach">${esc(w.line)}</p>`:""}
-   <div class="card">
+   <div class="card excard">
     <div class="eyebrow">Esercizio ${vi+1} di ${big}${ex.leg?" · alterna dx e sx":c.p.length>1?" · superserie":""}${ex.side?" · per lato":""}</div>
     <h2 class="exname">${ex.leg?ytLink(ex.p[0].n):ex.p.map(p=>ytLink(p.n)).join("<br>+ ")}</h2>
     <span class="muted" style="font-size:.85rem;margin-top:-6px">Tocca l'icona per vedere l'esecuzione</span>
@@ -762,14 +785,14 @@ function renderWork(){
     ${c.sets>1?`<div class="setdots">${Array.from({length:c.sets},(_,k)=>{const d=mine[k];const t=d?d.p.map((p,j)=>c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join("+"):"S"+(k+1);const cls=E?(k===E.s?"cur":d?"done":""):(d?"done":k===w.s?"cur":"");return d?`<button class="${cls}" data-act="editset" data-v="${k}" aria-label="Correggi serie ${k+1}">${t}</button>`:`<b class="${cls}">${t}</b>`}).join("")}</div>
     ${!E&&mine.some(Boolean)?`<span class="muted" style="font-size:.85rem">Tocca una serie verde per correggerla</span>`:""}`:""}
    </div>
-   ${E?"":ex.free?`<div class="card"><div class="worktimer" id="wt">${wt?mmss((Date.now()-wt.start)/1000):"0:00"}</div>
+   ${E?"":ex.free?`<div class="card tcard"><div class="worktimer" id="wt">${wt?mmss((Date.now()-wt.start)/1000):"0:00"}</div>
      <button class="btn btn-primary btn-big" data-act="${wt?"stopwork":"work"}">${wt?"Stop · fatto":"Avvia cronometro"}</button>
      <span class="muted" style="font-size:.85rem">Indicazione ${mmss(tp.v)}. Premi Stop quando hai finito: si passa all'esercizio dopo.</span></div>`:
-   isTime?`<div class="card"><div class="worktimer" id="wt">${wt?mmss((wt.end-Date.now())/1000):mmss(tp.v)}</div>
+   isTime?`<div class="card tcard"><div class="worktimer" id="wt">${wt?mmss((wt.end-Date.now())/1000):mmss(tp.v)}</div>
      <button class="btn ${wt?"btn-ghost":"btn-primary"}" data-act="${wt?"stopwork":"work"}">${wt?"Ferma timer":"Avvia timer "+mmss(tp.v)}</button>
      ${wakeOk===false?`<span class="muted" style="font-size:.85rem">Tieni lo schermo acceso: se il telefono si blocca, il segnale arriva solo quando lo riapri.</span>`:""}</div>`:""}
    ${E?"":suggCard(ex)}
-   <div class="card" ${ex.free&&!E?"hidden":""}>
+   <div class="card incard" ${ex.free&&!E?"hidden":""}>
     ${c.p.map((p,j)=>{const cur=CUR[j]||{};const showR=p.k!=="time"||c.p.length===1&&false;const fields=[];
       if(p.kg)fields.push(`<div class="fld"><label for="kg${j}">Kg${ex.side?"":""}</label><div class="step"><button data-act="dec" data-f="kg" data-j="${j}" aria-label="meno peso">−</button><input id="kg${j}" inputmode="decimal" data-f="kg" data-j="${j}" value="${esc(String(cur.kg??"").replace(".",","))}" placeholder="0"><button data-act="inc" data-f="kg" data-j="${j}" aria-label="più peso">+</button></div></div>`);
       if(p.k!=="time")fields.push(`<div class="fld"><label for="r${j}">${p.k==="max"?"Reps fatte":"Reps"}</label><div class="step"><button data-act="dec" data-f="r" data-j="${j}" aria-label="meno reps">−</button><input id="r${j}" inputmode="numeric" data-f="r" data-j="${j}" value="${esc(cur.r??"")}" placeholder="0"><button data-act="inc" data-f="r" data-j="${j}" aria-label="più reps">+</button></div></div>`);
