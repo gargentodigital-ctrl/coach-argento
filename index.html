@@ -2,7 +2,7 @@
 <html lang="it">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Coaching PT Gio">
@@ -17,6 +17,15 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=Barlow:wght@400;500;600&display=swap">
 <style>
 *,*::before,*::after{box-sizing:border-box}
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+/* telefono in orizzontale: iOS non permette di bloccare la rotazione a un'app web, quindi copro lo schermo con un invito a girarlo */
+.rotate{display:none}
+@media (orientation:landscape) and (max-height:520px){
+  .rotate{display:flex;position:fixed;inset:0;z-index:100;background:var(--bg);color:var(--fg);flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:24px}
+  .rotate svg{width:64px;height:64px}
+  .rotate b{font-family:var(--display);font-size:1.6rem;text-transform:uppercase}
+  #app,.toast,.nav{visibility:hidden}
+}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
 body{margin:0}
 [hidden]{display:none!important}
@@ -216,6 +225,7 @@ textarea{width:100%;min-height:80px;border-radius:var(--r);border:1px solid var(
 <body>
 <div id="app"></div>
 <div id="toast" class="toast" hidden></div>
+<div class="rotate" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="2.5"/><path d="M11 18h2"/></svg><b>Gira il telefono in verticale</b><span class="muted">Il timer continua a contare.</span></div>
 
 <script src="anim.js"></script>
 <script src="programs.js"></script>
@@ -1135,6 +1145,8 @@ app.addEventListener("click",e=>{
    case"del":if(S.confirm===v){deleteLog(v);S.confirm=null;S.open=null;toast("Seduta eliminata")}else S.confirm=v;render();break;
   }
 });
+document.addEventListener("gesturestart",e=>e.preventDefault(),{passive:false});
+try{screen.orientation&&screen.orientation.lock&&screen.orientation.lock("portrait").catch(()=>{})}catch{}
 app.addEventListener("keydown",e=>{if(e.target.id==="chatin"&&e.key==="Enter"&&!e.shiftKey&&!/iPhone|iPad|Android/i.test(navigator.userAgent)){e.preventDefault();sendChat(S.chatDraft)}});
 app.addEventListener("change",e=>{const t=e.target;if(t.id!=="restfile"||!t.files||!t.files[0])return;
   const fr=new FileReader();fr.onload=()=>{if(restore(String(fr.result))){S.restore="";render();window.scrollTo(0,0)}};fr.onerror=()=>toast("Non riesco a leggere il file");fr.readAsText(t.files[0]);t.value=""});
