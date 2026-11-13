@@ -5,7 +5,7 @@
 const P=(n,k,v,kg=true)=>({n,k,v,kg});
 window.PROGRAMS=[
 {id:"argento5",name:"Scheda G. Argento 5",from:"2026-10-16",
- tendon:["B","C","D"],calf:["b2","b3","b4","b5","c7","d2","d2b","d3","d3b"],
+ tendon:["B","C","D"],calf:["b2","b3","b4","b4b","b5","c7","d2","d2b","d3","d3b"],
  seds:{
  A:{t:"Upper 1",ex:[
   {id:"a1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
@@ -20,11 +20,13 @@ window.PROGRAMS=[
   {id:"b1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
   {id:"b2",p:[P("Tenuta isometrica su singolo avampiede","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},
   {id:"b3",p:[P("Saltelli monopodalici veloci","reps",30,false)],sets:2,rest:60,leg:1},
-  {id:"b4",p:[P("Calf raise gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"Angolo debole come visto col fisio. Carica tanto."},
+  {id:"b4b",since:"2026-11-13",p:[P("Calf raise alla leg press basculante gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"Angolo debole come visto col fisio. Carica tanto. Alla leg press basculante dal 13 novembre."},
   {id:"b5",p:[P("Bulgarian split squat su avampiede","reps",8)],sets:4,rest:45,leg:1,note:"Due manubri. 45\" tra una gamba e l'altra."},
   {id:"b6",p:[P("Stacchi rumeni con manubri","reps",15)],sets:3,rest:60},
   {id:"b7",p:[P("Wall sit","time",50,false),P("Squat jump","reps",8,false)],sets:4,rest:90,note:"Superserie. Salto bello alto."},
-  {id:"b8",p:[P("Wall run","time",10,false)],sets:4,rest:60,note:"Massima intensità, mani appoggiate al muro."}]},
+  {id:"b8",p:[P("Wall run","time",10,false)],sets:4,rest:60,note:"Massima intensità, mani appoggiate al muro."}],
+  /* esercizi sostituiti: restano solo per lo storico */
+  old:[{id:"b4",p:[P("Calf raise gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"In piedi. Sostituito il 13 novembre."}]},
  C:{t:"Total body",ex:[
   {id:"c1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
   {id:"c2",p:[P("Spinte in alto con bilanciere","reps",10)],var:[[4,10,75],[5,6,105]]},

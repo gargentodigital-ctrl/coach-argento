@@ -130,6 +130,7 @@ const MAP={
  "Alzata laterale al cavo basso":["latraise","Il cavo parte dal lato opposto: sali fino all'altezza della spalla."],
  "Tenuta isometrica su singolo avampiede":["iso1","Sali in punta e resta fermo in alto per tutto il tempo."],
  "Calf raise gamba singola":["calf1","Tallone giù sotto lo step, poi su in punta piena."],
+ "Calf raise alla leg press basculante gamba singola":["lpcalf","Un piede alla volta: scendi col tallone nell'angolo debole, poi spingi in punta piena."],
  "Saltelli monopodalici veloci":["pogo","Rimbalzi piccoli e rapidi sull'avampiede, ginocchio quasi teso."],
  "Bulgarian split squat su avampiede":["bulgarian","Piede dietro sulla panca, scendi in verticale col busto quasi dritto."],
  "Stacchi rumeni con manubri":["rdlDb","Spingi il bacino indietro, schiena neutra, ginocchia appena piegate."],
