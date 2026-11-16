@@ -315,6 +315,14 @@ if(logs.some(l=>!l.prog)){logs=logs.map(l=>l.prog?l:{...l,prog:DEF_PROG});LS.set
   if(n)LS.set("pt-logs",logs);LS.set("pt-mig-a7",true);
   const d=LS.get("pt-draft",null);if(d&&d.data&&d.data.a7&&d.start<"2026-11-01T23:00:00.000Z"){d.data.a7=d.data.a7.map(s=>s?{p:s.p.map(x=>({...x,kg:(x.kg||0)*2}))}:s);LS.set("pt-draft",d)}
 })();
+/* migrazione una tantum: la panca di oggi (16/11) era già alla macchina presa stretta → sposta i carichi registrati sul nuovo esercizio */
+(function(){if(LS.get("pt-mig-a2b",false))return;const from="2026-11-15T23:00:00.000Z";let n=0;
+  logs=logs.map(l=>{if((l.prog||DEF_PROG)!=="argento5"||l.sed!=="A"||!l.sets||!l.sets.a2||l.date<from)return l;
+    n++;const st={...l.sets};st.a2b=st.a2;delete st.a2;return {...l,sets:st}});
+  if(n)LS.set("pt-logs",logs);
+  const d=LS.get("pt-draft",null);if(d&&d.sed==="A"&&d.data&&d.data.a2&&d.start>=from){d.data.a2b=d.data.a2;delete d.data.a2;if(d.sugg)delete d.sugg.a2;LS.set("pt-draft",d)}
+  LS.set("pt-mig-a2b",true);
+})();
 const NS=()=>SEDS.length;
 const inActive=l=>progOf(l).id===ACTIVE.id;
 

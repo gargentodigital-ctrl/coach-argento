@@ -9,13 +9,15 @@ window.PROGRAMS=[
  seds:{
  A:{t:"Upper 1",ex:[
   {id:"a1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
-  {id:"a2",p:[P("Panca piana con bilanciere","reps",10)],var:[[4,10,75],[5,4,105]]},
+  {id:"a2b",since:"2026-11-16",p:[P("Panca alla macchina presa stretta","reps",10)],var:[[4,10,75],[5,4,105]],note:"Panca guidata con bracci bloccati e presa stretta, al posto del bilanciere finché la spalla sinistra non è a posto (dal 16 novembre)."},
   {id:"a3",p:[P("Rematore con bilanciere","reps",6)],var:[[5,6,90],[4,10,75]]},
   {id:"a4",p:[P("Croci con manubri","reps",12),P("Deficit push up","max",0,false)],sets:4,rest:90,note:"Superserie: croci e subito push up al cedimento. Recupero solo dopo entrambi."},
   {id:"a5",p:[P("Pulley braccio singolo","reps",10)],sets:3,rest:45,side:1,note:"Per braccio. Recupero dopo il secondo braccio."},
   {id:"a6",p:[P("Low row machine","reps",12)],sets:3,rest:60},
   {id:"a7",p:[P("French press","reps",10),P("EZ curl","reps",10)],sets:3,rest:60,note:"Superserie: recupero dopo entrambi. Kg totali sul bilanciere (non per lato)."},
-  {id:"a8",p:[P("Alzata laterale al cavo basso","reps",12)],sets:3,rest:60,side:1,note:"Per lato. 2 o 3 serie: la terza solo se la tecnica regge."}]},
+  {id:"a8",p:[P("Alzata laterale al cavo basso","reps",12)],sets:3,rest:60,side:1,note:"Per lato. 2 o 3 serie: la terza solo se la tecnica regge."}],
+  /* esercizi sostituiti: restano solo per lo storico */
+  old:[{id:"a2",p:[P("Panca piana con bilanciere","reps",10)],var:[[4,10,75],[5,4,105]],note:"Bilanciere libero. Sostituito il 16 novembre (spalla)."}]},
  B:{t:"Lower forza",ex:[
   {id:"b1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
   {id:"b2",p:[P("Tenuta isometrica su singolo avampiede","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso."},

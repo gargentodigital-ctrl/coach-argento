@@ -117,6 +117,7 @@ const MAP={
  "Mobility a terra e con bacchetta":["mob_dowel","Bacchetta tesa: passa da davanti a dietro la testa, braccia sempre dritte."],
  "Mobility a terra":["mob_floor","Gatto e cammello: inarca e arrotonda la schiena con il respiro."],
  "Panca piana con bilanciere":["panca","Scapole addotte, bilanciere sul basso petto, gomiti a circa 45°."],
+ "Panca alla macchina presa stretta":["panca","Presa stretta, gomiti vicini al busto, scendi controllato fino al petto."],
  "Spinte manubri su panca piana":["dbpress","Scendi controllato, i manubri arrivano ai lati del petto."],
  "French press":["french","Gomiti fermi, muovi solo gli avambracci verso la fronte."],
  "Rematore con bilanciere":["row","Busto inclinato e fermo, tira il bilanciere verso l'ombelico."],
