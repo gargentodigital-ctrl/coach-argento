@@ -31,13 +31,15 @@ window.PROGRAMS=[
   old:[{id:"b4",p:[P("Calf raise gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"In piedi. Sostituito il 13 novembre."}]},
  C:{t:"Total body",ex:[
   {id:"c1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
-  {id:"c2",p:[P("Spinte in alto con bilanciere","reps",10)],var:[[4,10,75],[5,6,105]]},
+  {id:"c2b",since:"2026-11-22",p:[P("Spinte in alto alla macchina assistita","reps",10)],var:[[4,10,75],[5,6,105]],note:"Macchina guidata al posto del bilanciere libero, per proteggere la spalla sinistra (dal 22 novembre)."},
   {id:"c3",p:[P("Lat machine presa supina","reps",6)],var:[[5,6,90],[4,12,75]]},
   {id:"c4",p:[P("Vertical traction","reps",10)],sets:3,rest:75,note:"2\" di tenuta in basso."},
   {id:"c5",p:[P("Cyclist goblet squat","reps",10)],sets:4,rest:75},
   {id:"c6",p:[P("Leg extension","reps",12)],sets:3,rest:60},
   {id:"c7",p:[P("Calf raise su leg press","reps",10)],sets:4,rest:60,note:"2\" di tenuta nell'angolo debole."},
-  {id:"c8",p:[P("Tapis roulant","time",720,false)],sets:1,rest:0,note:"1' camminata + 1' corsa, alternati."}]},
+  {id:"c8",p:[P("Tapis roulant","time",720,false)],sets:1,rest:0,note:"1' camminata + 1' corsa, alternati."}],
+  /* esercizi sostituiti: restano solo per lo storico */
+  old:[{id:"c2",p:[P("Spinte in alto con bilanciere","reps",10)],var:[[4,10,75],[5,6,105]],note:"Bilanciere libero. Sostituito il 22 novembre (spalla)."}]},
  D:{t:"Total body",ex:[
   {id:"d1",p:[P("Mobility a terra","time",300,false)],sets:1,rest:0,free:1},
   {id:"d2b",since:"2026-10-30",p:[P("Tenuta isometrica su avampiede alla leg press basculante","time",30)],sets:3,rest:60,leg:1,note:"Quando diventa facile, aggiungi peso. Alla leg press basculante dal 30 ottobre."},

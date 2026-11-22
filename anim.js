@@ -140,6 +140,7 @@ const MAP={
  "Squat jump":["squatjump","Accosciata, poi esplodi verso l'alto e atterra morbido."],
  "Wall run":["wallrun","Mani al muro, corpo inclinato, alterna le ginocchia più veloce che puoi."],
  "Spinte in alto con bilanciere":["ohp","Addome contratto, spingi in linea retta sopra la testa."],
+ "Spinte in alto alla macchina assistita":["ohp","Schiena appoggiata, spingi in alto senza bloccare i gomiti, scendi controllato."],
  "Lat machine presa supina":["lat","Palmi verso di te, tira la barra al petto con i gomiti in basso."],
  "Vertical traction":["vt","Tira giù e tieni 2 secondi in basso."],
  "Cyclist goblet squat":["cyclist","Talloni rialzati, piedi stretti, ginocchia avanti e busto dritto."],

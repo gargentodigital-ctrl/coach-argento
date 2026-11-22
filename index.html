@@ -323,6 +323,11 @@ if(logs.some(l=>!l.prog)){logs=logs.map(l=>l.prog?l:{...l,prog:DEF_PROG});LS.set
   const d=LS.get("pt-draft",null);if(d&&d.sed==="A"&&d.data&&d.data.a2&&d.start>=from){d.data.a2b=d.data.a2;delete d.data.a2;if(d.sugg)delete d.sugg.a2;LS.set("pt-draft",d)}
   LS.set("pt-mig-a2b",true);
 })();
+(function(){if(LS.get("pt-fix-a7-1116",false))return;let n=0;
+  logs=logs.map(l=>{if((l.prog||DEF_PROG)!=="argento5"||l.sed!=="A"||!l.sets||!l.sets.a7||l.date<"2026-11-15T23:00:00.000Z"||l.date>="2026-11-16T23:00:00.000Z")return l;
+    n++;return {...l,sets:{...l.sets,a7:l.sets.a7.map(s=>s?{p:s.p.map(x=>({...x,kg:x.kg===10?20:x.kg}))}:s)}}});
+  if(n)LS.set("pt-logs",logs);LS.set("pt-fix-a7-1116",true);
+})();
 const NS=()=>SEDS.length;
 const inActive=l=>progOf(l).id===ACTIVE.id;
 
@@ -384,7 +389,8 @@ const STEPOPT=[1,1.25,2,2.5,5];
 function stepCat(name){return STEPCAT.find(c=>c.re.test(name))}
 function stepFor(name,kg){const c=stepCat(name);const st=LS.get("pt-steps",{});return st[c.k]||c.d}
 /* prossimo / precedente peso realizzabile sulla griglia dell'attrezzo (es. 23 → 25 su un pacco da 5) */
-const gridUp=(kg,st)=>Math.round(Math.ceil((kg+0.001)/st)*st*100)/100;
+/* aumento proposto: peso + passo dell'attrezzo, arrotondato al mezzo chilo (nessuna griglia: pesi liberi di 0,5 in 0,5) */
+const gridUp=(kg,st)=>Math.round((kg+st)*2)/2;
 const gridDown=(kg,st)=>Math.max(0,Math.round(Math.floor((kg-0.001)/st)*st*100)/100);
 /* ======= OBIETTIVO DI OGGI (dall'ultima volta) ======= */
 function tendonWarnNow(){
@@ -410,7 +416,7 @@ function suggFor(w,ex){
       const rep2=Object.keys(cnt).filter(k=>cnt[k]>1);
       /* peso più usato; se ogni serie ha un peso diverso (piramide) uso quello centrale */
       const mode=rep2.length?+rep2.sort((a,b)=>cnt[b]-cnt[a]||b-a)[0]:srt[Math.floor((srt.length-1)/2)];
-      const st=stepFor(p.n);let to=Math.min(gridUp(mode,st),maxKg);if(Math.abs(to/st-Math.round(to/st))>1e-6)to=gridDown(to,st);
+      const st=stepFor(p.n);let to=Math.min(gridUp(mode,st),maxKg);
       parts.push({j,kind:"up",kg:to,text:`${side(j)}l'ultima volta hai cambiato peso tra le serie (${kgs.map(kgf).join(" · ")}). Oggi tutte le serie a ${kgf(to)} kg: il riscaldamento fallo prima, fuori conteggio.`,short:`${side(j)}tutte a ${kgf(to)} kg`});return}
     if(hit){const to=gridUp(maxKg,stepFor(p.n,maxKg));parts.push({j,kind:"up",kg:to,text:`${side(j)}l'ultima volta hai chiuso tutte le serie a ${kgf(maxKg)} kg. Oggi prova ${kgf(to)} kg.`,short:`${side(j)}${kgf(to)} kg`});return}
     if(missed>0)parts.push({j,kind:"hold",kg:maxKg,goal,text:`${side(j)}l'ultima volta ti sono mancate ${missed}${unit} a ${kgf(maxKg)} kg. Resta a ${kgf(maxKg)} kg e chiudi tutte le serie.`,short:`${side(j)}chiudi tutto a ${kgf(maxKg)} kg`});
@@ -1093,8 +1099,8 @@ function renderSettings(){
      `<div class="fld"><label for="apikey">Chiave API</label><input id="apikey" class="keyin" type="password" autocomplete="off" placeholder="sk-ant-…"></div><button class="btn btn-primary" data-act="keysave">Salva chiave</button>`}
     <div class="fld"><label>Modello</label><div class="seg">${CHAT_MODELS.map(([m,l])=>`<button data-act="setmodel" data-v="${m}" aria-pressed="${chatModel()===m}">${l}</button>`).join("")}</div></div>
    </div>
-   <div class="card"><div class="eyebrow">Incrementi dei pesi</div>
-    <p class="muted" style="margin:0;font-size:.9rem">Il passo minimo dei pesi nella tua palestra. Lo usano gli Obiettivi di oggi e i pulsanti + e −.</p>
+   <div class="card"><div class="eyebrow">Aumento proposto dagli obiettivi</div>
+    <p class="muted" style="margin:0;font-size:.9rem">Di quanto l'Obiettivo di oggi propone di salire quando chiudi tutte le serie. I pulsanti + e − dei kg vanno sempre di 0,5 kg, e puoi scrivere qualsiasi peso.</p>
     ${STEPCAT.map(c=>{const v=st[c.k]||c.d;return `<div class="steprow"><div><b>${c.lab}</b><span class="muted">${c.ex}</span></div>
       <div class="seg stepseg">${STEPOPT.map(o=>`<button data-act="setstep" data-k="${c.k}" data-v="${o}" aria-pressed="${v===o}">${String(o).replace(".",",")}</button>`).join("")}</div></div>`}).join("")}
    </div>
@@ -1138,7 +1144,7 @@ app.addEventListener("click",e=>{
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;
    case"discard":S.w=null;saveDraft();render();break;
    case"inc":case"dec":{const j=+b.dataset.j,f=b.dataset.f,ex=PLAN[w.sed].ex[viewIdx()];const step=f==="kg"?stepFor(ex.p[Math.min(j,ex.p.length-1)].n):1;const A=curArr();
-     const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=f==="kg"?(a==="inc"?gridUp(cur,step):gridDown(cur,step)):Math.max(0,cur+(a==="inc"?1:-1));
+     const cur=parseFloat(String(A[j][f]).replace(",","."))||0;A[j][f]=f==="kg"?Math.max(0,Math.round((cur+(a==="inc"?0.5:-0.5))*2)/2):Math.max(0,cur+(a==="inc"?1:-1));
      const inp=document.getElementById(f+j);if(inp)inp.value=String(A[j][f]).replace(".",",");saveDraft();break}
    case"editset":startEdit(viewIdx(),+v);break;
    case"canceledit":S.edit=null;backToRest();render();break;
