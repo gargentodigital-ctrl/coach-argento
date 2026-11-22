@@ -31,7 +31,7 @@ window.PROGRAMS=[
   old:[{id:"b4",p:[P("Calf raise gamba singola","reps",10)],sets:3,rest:60,leg:1,note:"In piedi. Sostituito il 13 novembre."}]},
  C:{t:"Total body",ex:[
   {id:"c1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
-  {id:"c2b",since:"2026-11-22",p:[P("Spinte in alto alla macchina assistita","reps",10)],var:[[4,10,75],[5,6,105]],note:"Macchina guidata al posto del bilanciere libero, per proteggere la spalla sinistra (dal 22 novembre)."},
+  {id:"c2b",since:"2026-11-22",startKg:37.5,p:[P("Spinte in alto alla macchina assistita","reps",10)],var:[[4,10,75],[5,6,105]],note:"Macchina guidata al posto del bilanciere libero, per proteggere la spalla sinistra (dal 22 novembre)."},
   {id:"c3",p:[P("Lat machine presa supina","reps",6)],var:[[5,6,90],[4,12,75]]},
   {id:"c4",p:[P("Vertical traction","reps",10)],sets:3,rest:75,note:"2\" di tenuta in basso."},
   {id:"c5",p:[P("Cyclist goblet squat","reps",10)],sets:4,rest:75},

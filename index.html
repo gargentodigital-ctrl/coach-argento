@@ -455,7 +455,7 @@ function prefill(){
     const fromMine=mine[w.s-1]&&mine[w.s-1].p[j];
     const fromPrev=pv&&(pv[w.s]||pv[pv.length-1]);const pp=fromPrev&&fromPrev.p[j];
     const up=sg&&sg.parts.find(x=>x.j===j&&x.kind==="up");
-    const kg=fromMine?fromMine.kg:(up?up.kg:(pp?pp.kg:""));
+    const kg=fromMine?fromMine.kg:(up?up.kg:(pp?pp.kg:(ex.startKg!=null&&j===0?ex.startKg:"")));
     const r=p.k==="max"?(pp?pp.r:""):p.v;
     return {kg:p.kg?kg:"",r};
   });
