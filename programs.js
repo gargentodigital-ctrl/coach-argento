@@ -5,7 +5,7 @@
 const P=(n,k,v,kg=true)=>({n,k,v,kg});
 window.PROGRAMS=[
 {id:"argento5",name:"Scheda G. Argento 5",from:"2026-10-16",
- tendon:["B","C","D"],calf:["b2","b3","b4","b4b","b5","c7","d2","d2b","d3","d3b"],
+ tendon:["B","C","D"],calf:["b2","b3","b4","b4b","b5","h4","h5","c7","d2","d2b","d3","d3b"],
  seds:{
  A:{t:"Upper 1",ex:[
   {id:"a1",p:[P("Mobility a terra e con bacchetta","time",300,false)],sets:1,rest:0,free:1},
@@ -52,7 +52,14 @@ window.PROGRAMS=[
   {id:"d9",p:[P("Push down al cavo alto","reps",12),P("Curl con due manubri","reps",12)],sets:3,rest:75,note:"Superserie: recupero dopo entrambi."}],
   /* esercizi sostituiti: non compaiono più in seduta, restano per lo storico */
   old:[{id:"d2",p:[P("Tenuta isometrica su avampiede al multipower","time",30)],sets:3,rest:60,leg:1,note:"Sostituito il 30 ottobre."},
-       {id:"d3",p:[P("Calf raise al multipower","reps",8)],sets:3,rest:60,note:"Bipodalico, peso alto. Sostituito il 27 ottobre."}]}
+       {id:"d3",p:[P("Calf raise al multipower","reps",8)],sets:3,rest:60,note:"Bipodalico, peso alto. Sostituito il 27 ottobre."}]},
+ /* routine a casa (extra): non conta nelle 4 sedute, si può fare ogni sera */
+ H:{t:"Routine a casa",extra:true,ex:[
+  {id:"h1",p:[P("Equilibrio su una gamba sul cuscino","time",30,false)],sets:3,rest:15,leg:1,note:"Occhi aperti, ginocchio appena piegato, piede su un cuscino o un asciugamano piegato. Inizia dalla destra."},
+  {id:"h2",p:[P("Equilibrio su una gamba a occhi chiusi","time",20,false)],sets:2,rest:15,leg:1,note:"A piedi nudi sul pavimento, vicino a un muro per sicurezza."},
+  {id:"h3",p:[P("Raggiungimenti a stella su una gamba","reps",8,false)],sets:2,rest:20,leg:1,note:"In equilibrio su una gamba, con la punta dell'altra tocca avanti, di lato e dietro senza appoggiarla. Ogni tocco conta una ripetizione."},
+  {id:"h4",p:[P("Calf raise sul gradino: sali con due piedi, scendi col destro","reps",10)],sets:3,rest:45,note:"Sali con entrambi i piedi, poi stacca il sinistro e scendi solo sul destro in 4 secondi, fino sotto il livello del gradino. Kg = zaino, se lo usi."},
+  {id:"h5",p:[P("Calf raise da seduto con peso sulle ginocchia","reps",15)],sets:3,rest:30,leg:1,note:"Seduto su una sedia, zaino o pesi sul ginocchio: sali in punta e scendi lento. Lavora il soleo, il muscolo profondo del polpaccio."}]}
 }}
 ];
 })();

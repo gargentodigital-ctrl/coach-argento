@@ -140,6 +140,8 @@ body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset
 .nextline .nlname{font-family:var(--display);font-weight:700;font-size:1.15rem;text-transform:uppercase;line-height:1.15}
 .nextline .nlname .vid{width:30px;height:24px}
 .nextline .muted{font-size:.88rem}
+.homecard{display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--surface);border:1px dashed var(--accent);border-radius:var(--r);padding:12px 14px}
+.homecard>div{min-width:0;display:flex;flex-direction:column;gap:2px}.homecard .btn{flex:none;min-height:44px;font-size:1.05rem}
 .fixlast{color:inherit;opacity:.8;font-weight:600;text-decoration:underline;text-underline-offset:3px;padding:6px}
 .part{display:flex;flex-direction:column;gap:8px}
 .part+.part{border-top:1px dashed var(--line);padding-top:12px}
@@ -267,7 +269,7 @@ const exAll=sd=>sd?[...sd.ex,...(sd.old||[])]:[];
 const isTendon=l=>(progOf(l).tendon||[]).includes(l.sed);
 const calfOf=l=>progOf(l).calf||[];
 let ACTIVE,PLAN,SEDS,TENDON,CALF;
-function setActive(id){ACTIVE=progById(id);PLAN=ACTIVE.seds;SEDS=Object.keys(PLAN);TENDON={};(ACTIVE.tendon||[]).forEach(x=>TENDON[x]=1);CALF=ACTIVE.calf||[]}
+function setActive(id){ACTIVE=progById(id);PLAN=ACTIVE.seds;SEDS=Object.keys(PLAN).filter(k=>!PLAN[k].extra);TENDON={};(ACTIVE.tendon||[]).forEach(x=>TENDON[x]=1);CALF=ACTIVE.calf||[]}
 
 const VIDICON='<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="2" y="6" width="14" height="12" rx="2.5" fill="currentColor"/><path d="M17 10.5 22 7.5v9l-5-3z" fill="currentColor"/></svg>';
 const ytLink=n=>window.ExAnim&&ExAnim.has(n)?`<span class="exn">${esc(n)}<button class="vid" data-act="vid" data-v="${esc(n)}" aria-label="Guarda l'esecuzione di ${esc(n)}">${VIDICON}</button></span>`:esc(n);
@@ -334,7 +336,11 @@ const inActive=l=>progOf(l).id===ACTIVE.id;
 /* ======= STATO ======= */
 const S={view:"home",sel:null,v:null,w:LS.get("pt-draft",null),rest:null,work:null,wk:0,rpe:null,note:"",confirm:null,open:null};
 function lastOf(sed){return sorted().find(l=>l.sed===sed&&inActive(l))}
-function weekLogs(key){return logs.filter(l=>l.wk===key)}
+const isExtra=l=>!!((planOf(l)||{})[l.sed]||{}).extra;
+/* sedute di palestra della settimana (la routine a casa è contata a parte) */
+function weekLogs(key){return logs.filter(l=>l.wk===key&&!isExtra(l))}
+function extraWeekLogs(key){return logs.filter(l=>l.wk===key&&isExtra(l))}
+const EXTRA_KEY=()=>Object.keys(PLAN).find(k=>PLAN[k].extra);
 function suggest(){const done=new Set(weekLogs(isoWeek(new Date())).filter(inActive).map(l=>l.sed));return SEDS.find(s=>!done.has(s))||null}
 function nextVar(sed){const l=lastOf(sed);return l?1-(l.v||0):0}
 function prevSets(sed,v,exId,beforeDate){
@@ -658,6 +664,8 @@ function buildReport(key){
   {const it=hrWeek(key);if(it.avg!=null)L.push(`Intensità: FC media ${Math.round(it.avg)} bpm su ${it.n} sedute${it.prev!=null?" (settimana prima "+Math.round(it.prev)+")":""}`)}
   L.push(`Tendine dx: dolore medio ${tw.avg!=null?kgf(tw.avg):"–"} (media 4 sett. prima ${tw.baseAvg!=null?kgf(tw.baseAvg):"–"}) · rigidità ${tw.stiffs.length?tw.stiffs.map(x=>STIFF[x]).join("/"):"non segnata"}`);
   tw.asym.forEach(x=>L.push(`  ${x.n}: ${x.pct===0?"dx e sx pari":x.pct>0?"dx sotto sx del "+x.pct+"%":"dx sopra sx del "+(-x.pct)+"%"}`));
+  {const ew=extraWeekLogs(key).sort((x,y)=>new Date(x.date)-new Date(y.date));L.push(`Routine a casa: ${ew.length}/7${ew.length?" ("+ew.map(l=>new Date(l.date).toLocaleDateString("it-IT",{weekday:"short"})).join(", ")+")":""}`);
+   const last=ew[ew.length-1];if(last){const PLh=planOf(last)[last.sed];PLh.ex.forEach(ex=>{const s=last.sets&&last.sets[ex.id];if(s)L.push(`  ${exTitle(ex,cfg(ex,0))}: ${setsTxt(ex,cfg(ex,0),s)}`)})}}
   a.wl.forEach(l=>{
     L.push("");
     const PL=planOf(l);if(!PL[l.sed])return;
@@ -727,9 +735,9 @@ function renderHome(){
     <span class="muted" style="font-size:.9rem">La scheda attuale resta salvata nello Storico con tutte le sedute fatte.</span>
     <div class="row"><button class="btn btn-primary" data-act="activate" data-v="${newest.id}" style="flex:1">Attiva</button><button class="btn btn-ghost" data-act="later" data-v="${newest.id}">Più tardi</button></div></div>`:"";
   const sug=suggest();if(!S.sel)S.sel=sug||"A";if(S.v===null)S.v=nextVar(S.sel);
-  const last=sorted()[0];const days=last?Math.floor((Date.now()-new Date(last.date))/864e5):null;
+  const last=sorted().find(l=>!isExtra(l));const days=last?Math.floor((Date.now()-new Date(last.date))/864e5):null;
   let head;
-  if(!logs.length)head="Prima seduta. Scegli, premi Inizia, al resto penso io.";
+  if(!last)head="Prima seduta. Scegli, premi Inizia, al resto penso io.";
   else if(wl.length>=NS())head="Settimana chiusa. Riposa senza sensi di colpa.";
   else if(days>=4)head=`${days} giorni dall'ultima seduta. Niente recuperi eroici: fai la prossima e basta.`;
   else if(days===0)head="Già fatto oggi. Se vuoi farne un'altra, va bene, ma il recupero conta.";
@@ -757,8 +765,11 @@ function renderHome(){
    ${stiffCard}
    ${LS.get("pt-watch",[]).length?`<div class="watchline">Dati Apple Watch in attesa: si agganciano alla seduta quando la salvi.</div>`:""}
    ${remCard}
-   ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">Seduta ${draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
+   ${draft?`<div class="card"><div class="eyebrow">Seduta in corso</div><div class="target">${PLAN[draft.sed]&&PLAN[draft.sed].extra?PLAN[draft.sed].t:"Seduta "+draft.sed} · esercizio ${draft.i+1} di ${PLAN[draft.sed].ex.length}</div>
      <div class="row"><button class="btn btn-primary" data-act="resume" style="flex:1">Riprendi</button><button class="btn btn-ghost" data-act="discard">Butta</button></div></div>`:""}
+   ${(()=>{const hk=EXTRA_KEY();if(!hk)return "";const ew=extraWeekLogs(key);const t0=new Date();t0.setHours(0,0,0,0);const today=ew.some(l=>new Date(l.date)>=t0);const e=estMin(hk);
+     return `<div class="homecard"><div><div class="eyebrow">Routine a casa · polpaccio</div><div class="target">${today?"Fatta oggi ✓":"Da fare stasera"} · ${ew.length}/7 questa settimana</div><span class="muted" style="font-size:.85rem">${PLAN[hk].ex.length} esercizi · ${e.real?"":"~"}${e.m}'</span></div>
+       <button class="btn ${today?"btn-ghost":"btn-primary"}" data-act="starthome" ${draft?"disabled":""}>${today?"Rifalla":"Inizia"}</button></div>`})()}
    <div class="sedute">${SEDS.map(s=>`<button class="sed" data-act="sel" data-v="${s}" aria-pressed="${S.sel===s}">
      ${(()=>{const e=estMin(s);return `<span class="est" title="${e.real?"Media delle tue ultime sedute":"Stima da serie e recuperi"}">${e.real?"":"~"}${e.m}'</span>`})()}${done.has(s)?'<span class="tick">FATTA</span>':""}<span class="L">${s}</span><span class="T">${PLAN[s].t}</span><span class="S">${PLAN[s].ex.length} esercizi${s===sug?" · consigliata":""}</span></button>`).join("")}</div>
    ${PLAN[S.sel].ex.some(e=>e.var)?`<div class="fld"><label>Variante (alterna ogni settimana)</label><div class="seg">
@@ -788,7 +799,7 @@ function renderWork(){
   const big=exs.length;
   app.innerHTML=`<div class="wrap">
    <div class="wtop">
-    <div class="spread"><span class="eyebrow">Seduta ${w.sed} · ${ex.var?varLabel(w.sed,w.v):PLAN[w.sed].t}</span><button class="muted" data-act="end" style="font-weight:600;padding:6px 0">Termina</button></div>
+    <div class="spread"><span class="eyebrow">${PLAN[w.sed].extra?"":"Seduta "+w.sed+" · "}${ex.var?varLabel(w.sed,w.v):PLAN[w.sed].t}</span><button class="muted" data-act="end" style="font-weight:600;padding:6px 0">Termina</button></div>
     <div class="prog">${exs.map((e,i)=>`<i class="${i<w.i?"done":i===w.i?"cur":""}"></i>`).join("")}</div>
    </div>
    ${S.rest&&S.rest.hidden?`<button class="restbar" data-act="showrest"><span>Recupero in corso: il timer continua</span><b id="rbar" class="num">${mmss((S.rest.end-Date.now())/1000)}</b><span>Torna al timer</span></button>`:""}
@@ -891,7 +902,7 @@ function renderFinish(){
   const w=S.w;const n=Object.values(w.data).reduce((a,x)=>a+x.filter(Boolean).length,0);
   const mins=Math.round((Date.now()-new Date(w.start))/60000);
   app.innerHTML=`<div class="wrap">
-   <div class="eyebrow">Seduta ${w.sed} · ${PLAN[w.sed].t}</div>
+   <div class="eyebrow">${PLAN[w.sed].extra?"":"Seduta "+w.sed+" · "}${PLAN[w.sed].t}</div>
    <h1>Chiusa.</h1>
    <div class="stats"><div class="stat"><b>${n}</b><span>Serie</span></div><div class="stat"><b>${mins}'</b><span>Durata</span></div><div class="stat"><b>${Object.keys(w.data).length}/${PLAN[w.sed].ex.length}</b><span>Esercizi</span></div></div>
    <div class="card"><div class="fld"><label>Quanto è stata dura? (RPE)</label>
@@ -902,10 +913,10 @@ function renderFinish(){
     <div class="fld"><label>Dolore durante polpacci e saltelli</label>
      <div class="rpe">${[0,1,2,3,4,5,6,7,8,9,10].map(v=>`<button data-act="pain" data-v="${v}" aria-pressed="${S.pain===v}">${v}</button>`).join("")}</div>
      <span class="muted" style="font-size:.85rem">0 niente · 10 il peggiore immaginabile. Domani mattina ti chiedo della rigidità.</span></div></div>`:""}
-   <div class="card"><div class="eyebrow">Battiti medi · Apple Watch</div>
+   ${PLAN[w.sed].extra?"":`<div class="card"><div class="eyebrow">Battiti medi · Apple Watch</div>
     <span class="muted" style="font-size:.88rem">La frequenza cardiaca media dal riepilogo del Watch. Serve a seguire l'intensità delle sedute.</span>
     <div class="fields one"><div class="fld"><label for="whr">FC media (bpm)</label><input id="whr" class="winp" inputmode="numeric" data-f="whr" value="${esc(S.whr||"")}" placeholder="es. 124"></div></div>
-   </div>
+   </div>`}
    <div class="card">
     <div class="fld"><label for="note">Note (dolori, sensazioni, cosa cambiare)</label><textarea id="note" data-f="note" placeholder="Es. tendine ok, panca pesante sull'ultima serie">${esc(S.note)}</textarea></div>
    </div>
@@ -983,14 +994,14 @@ function renderHist(){
    <div class="pcards">${progCards}</div>
    <div class="card">
     <div class="spread"><h2>${esc(hp.name)}</h2>${hp.id===ACTIVE.id?'<span class="pill y">Attiva</span>':""}</div>
-    <span class="muted">${hp.archived?Object.keys(hp.seds).length+" schede diverse":Object.keys(hp.seds).length+" sedute a settimana"} · ${L.length} eseguite</span>
+    <span class="muted">${hp.archived?Object.keys(hp.seds).length+" schede diverse":Object.keys(hp.seds).filter(k=>!hp.seds[k].extra).length+" sedute a settimana"+(Object.values(hp.seds).some(x=>x.extra)?" + routine a casa":"")} · ${L.length} eseguite</span>
     <button class="btn btn-ghost" data-act="showplan">${S.showPlan?"Nascondi esercizi":"Vedi esercizi della scheda"}</button>
     ${planHTML}
     ${hp.archived?`<span class="muted" style="font-size:.88rem">${esc(hp.note||"Storico importato: si consulta, non si attiva.")}</span>`:hp.id!==ACTIVE.id?`<button class="btn btn-primary" data-act="activate" data-v="${hp.id}">Attiva questa scheda</button>`:""}
    </div>
    <div class="eyebrow">Sedute eseguite</div>
    <div class="hist">${L.length?L.map(l=>{const open=S.open===l.id;return `<div class="hrow">
-     <button class="spread" data-act="open" data-v="${l.id}" style="text-align:left;width:100%"><span><b style="font-family:var(--display);font-size:1.3rem">${hp.archived?esc((hp.seds[l.sed]||{}).t||l.sed):"Seduta "+l.sed}</b> <span class="muted">· ${fmtD(l.date)}</span></span><span class="muted num">${l.dur||"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}</span></button>
+     <button class="spread" data-act="open" data-v="${l.id}" style="text-align:left;width:100%"><span><b style="font-family:var(--display);font-size:1.3rem">${hp.archived||(hp.seds[l.sed]||{}).extra?esc((hp.seds[l.sed]||{}).t||l.sed):"Seduta "+l.sed}</b> <span class="muted">· ${fmtD(l.date)}</span></span><span class="muted num">${l.dur||"–"}' · RPE ${l.rpe||"–"}${typeof l.pain==="number"?" · dolore "+l.pain:""}</span></button>
      ${typeof l.stiff==="number"&&l.stiff>=0?`<span class="muted" style="font-size:.85rem">Rigidità il mattino dopo: ${STIFF[l.stiff]}</span>`:""}
      ${l.watch&&l.watch.hr!=null?`<span class="watchline">♥ ${esc(watchTxt(l.watch))}</span>`:""}
      ${open?`<table>${exAll(planOf(l)[l.sed]).filter(e=>l.sets&&l.sets[e.id]).map(e=>{const c=cfg(e,l.v||0);return `<tr><td>${esc(exTitle(e,c))}</td><td>${l.sets[e.id].filter(Boolean).map(s=>s.p.map((p,j)=>c.p[j]&&c.p[j].k==="time"?(p.kg?kgf(p.kg)+"kg ":"")+mmss(p.r):c.p[j]&&c.p[j].kg&&p.kg?kgf(p.kg)+"×"+p.r:p.r).join(e.leg?" | ":"+")).join(", ")}</td></tr>`}).join("")}</table>
@@ -1139,6 +1150,7 @@ app.addEventListener("click",e=>{
    case"sel":S.sel=v;S.v=nextVar(v);render();break;
    case"var":S.v=+v;render();break;
    case"start":unlockAudio();if(LS.get("pt-watchalert",true)){S.watchAlert=true;render()}else startWorkout();break;
+   case"starthome":unlockAudio();S.sel=EXTRA_KEY();S.v=0;startWorkout();break;
    case"watchgo":S.watchAlert=false;startWorkout();break;
    case"watchno":if(e.target.closest(".wbox")&&b.classList.contains("walert"))break;S.watchAlert=false;render();break;
    case"resume":S.view="work";keepAwake();if(!w.cur)prefill();render();break;

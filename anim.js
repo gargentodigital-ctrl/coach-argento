@@ -111,6 +111,11 @@ const EX={
  calfSmith:{dur:4,frames:[M(SMITH,{h:[-1,91],L1:{p:[1,9]},L2:{p:[-2,9]},F1:25,F2:25,hold:.3}),M(SMITH,{h:[3,106],L1:{p:[7,24]},L2:{p:[4,24]},F1:-55,F2:-55,hold:.6})],props:SMITHP},
  legcurl:{dur:4,frames:[{h:[-12,46],t:0,hd:-25,L1:[180,180],L2:[181,181],F1:-90,F2:-90,A1:[-30,-80],A2:[-32,-82]},{h:[-12,46],t:0,hd:-25,L1:[180,72],L2:[181,73],F1:160,F2:160,A1:[-30,-80],A2:[-32,-82]}],props:[{k:"bench",x1:-70,x2:50,y:38},{k:"pad",at:"ankle1",r:6}]},
  cablefly:{view:"front",dur:4.5,frames:[M(FR,{A1:{a:[35,25],s:1}}),M(FR,{A1:{a:[-110,-118],s:1}})],props:[{k:"box",x1:-100,y1:0,x2:-92,y2:190},{k:"box",x1:92,y1:0,x2:100,y2:190},{k:"cable",from:[92,182],to:"hand1"},{k:"cable",from:[-92,182],to:"hand2"}]},
+ balance:{dur:5,frames:[M(ST,{h:[1,91],t:88,L1:{p:[4,9]},L2:[-80,-150],F1:0,A1:[-40,-20],A2:[-140,-160]}),M(ST,{h:[-1,91],t:93,L1:{p:[4,9]},L2:[-82,-150],F1:0,A1:[-35,-15],A2:[-145,-165]})],props:[{k:"box",x1:-14,y1:0,x2:22,y2:5}]},
+ balanceEc:{dur:5,frames:[M(ST,{h:[1,86],t:88,hd:-15,L1:{p:[4,4]},L2:[-80,-150],F1:0,A1:[-40,-20],A2:[-140,-160]}),M(ST,{h:[-1,86],t:93,hd:-15,L1:{p:[4,4]},L2:[-82,-150],F1:0,A1:[-35,-15],A2:[-145,-165]})],props:[{k:"wall",x:-50}]},
+ star:{dur:6,loop:true,frames:[M(ST,{h:[0,80],t:84,L1:{p:[4,4]},L2:{p:[44,10]},F2:0,A1:[-60,-60],A2:[-120,-120],hold:.5}),M(ST,{h:[0,80],t:88,L1:{p:[4,4]},L2:{p:[6,14]},F2:0,A1:[-60,-60],A2:[-120,-120],hold:.5}),M(ST,{h:[0,80],t:98,L1:{p:[4,4]},L2:{p:[-42,10]},F2:-30,A1:[-60,-60],A2:[-120,-120],hold:.5})],props:[],cap:"Avanti, di lato, dietro: la punta sfiora il pavimento"},
+ stepEcc:{dur:6,frames:[M(ST,{h:[3,116],L1:{p:[7,34]},L2:[-100,-150],F1:-55,A1:{p:[48,138],b:[0,-1]},A2:[-90,-90],hold:.4}),M(ST,{h:[-1,99],L1:{p:[1,17]},L2:[-100,-150],F1:25,A1:{p:[48,136],b:[0,-1]},A2:[-90,-90],hold:.6})],props:[{k:"box",x1:-20,y1:0,x2:10,y2:10},{k:"wall",x:56}],cap:"Su con due piedi, giù lento solo col destro"},
+ seatcalf:{dur:4,frames:[{h:[-14,50],t:92,L1:{p:[26,4]},L2:{p:[23,4]},F1:0,F2:0,A1:[-50,-10],A2:[-52,-12],hold:.3},{h:[-14,50],t:92,L1:{p:[26,13]},L2:{p:[23,13]},F1:-50,F2:-50,A1:[-50,-10],A2:[-52,-12],hold:.6}],props:[{k:"bench",x1:-40,x2:4,y:46},{k:"plate",at:"knee1",r:7}]},
  pushdown:{dur:4,frames:[M(ST,{t:82,hd:-8,A1:[-100,72],A2:[-101,71]}),M(ST,{t:82,hd:-8,A1:[-96,-88],A2:[-97,-89]})],props:[{k:"box",x1:40,y1:0,x2:52,y2:186},{k:"cable",from:[40,180],to:"hand1"},{k:"plate",at:"hand1",r:3.5}]}
 };
 const MAP={
@@ -153,6 +158,11 @@ const MAP={
  "Calf raise su leg press gamba singola":["lpcalf","Un piede alla volta: 8 spinte con l'avampiede, poi tieni 10 secondi alla fine."],
  "Leg curl":["legcurl","Bacino schiacciato sulla panca, porta i talloni verso i glutei."],
  "Croci ai cavi alti":["cablefly","Dall'alto verso il basso, le mani si incontrano davanti al bacino."],
+ "Equilibrio su una gamba sul cuscino":["balance","Piede sul cuscino, ginocchio morbido: resta fermo e lascia lavorare la caviglia."],
+ "Equilibrio su una gamba a occhi chiusi":["balanceEc","A piedi nudi vicino al muro: chiudi gli occhi e tieni l'equilibrio."],
+ "Raggiungimenti a stella su una gamba":["star","Gamba d'appoggio ferma: la punta dell'altra tocca avanti, di lato e dietro."],
+ "Calf raise sul gradino: sali con due piedi, scendi col destro":["stepEcc","Su con due piedi, poi stacca il sinistro e scendi in 4 secondi col destro."],
+ "Calf raise da seduto con peso sulle ginocchia":["seatcalf","Peso sulle ginocchia, sali in punta e scendi lento."],
  "Push down al cavo alto":["pushdown","Gomiti fermi ai fianchi, spingi fino a braccia tese."]
 };
 
@@ -170,7 +180,7 @@ const MUS={mob_dowel:["delt","chest"],mob_floor:["abs","back"],panca:["chest","d
  croci:["chest"],pushup:["chest","tri","delt"],pulley1:["lats","back","bi"],lowrow:["lats","back","bi"],ezcurl:["bi"],dbcurl:["bi"],latraise:["delt"],
  iso1:["calf"],calf1:["calf"],pogo:["calf"],isoSmith:["calf"],calfSmith:["calf"],lpcalf:["calf"],bulgarian:["quad","glute"],rdlDb:["ham","glute"],rdlBb:["ham","glute"],
  wallsit:["quad"],squatjump:["quad","glute","calf"],wallrun:["quad","glute","calf"],ohp:["delt","tri"],lat:["lats","bi"],vt:["lats","bi"],cyclist:["quad"],
- legext:["quad"],tread:["quad","calf","ham"],legcurl:["ham"],cablefly:["chest"],pushdown:["tri"]};
+ legext:["quad"],tread:["quad","calf","ham"],legcurl:["ham"],cablefly:["chest"],pushdown:["tri"],balance:["calf"],balanceEc:["calf"],star:["calf","glute"],stepEcc:["calf"],seatcalf:["calf"]};
 function draw(ctx,ex,time,W,H,box){
   const C={bg:"#FFFFFF",ground:"#E6E9EC",skin:"#ECEEF0",skinFar:"#D3D8DC",out:"#8C959C",outFar:"#A3ABB1",shorts:"#262B30",
     red:"#E2412C",red2:"#F2885C",metal:"#9AA3AA",iron:"#24292E",pad:"#3A4148",mach:"#E3E7EA",machLine:"#C6CDD2",cable:"#7D868D"};
